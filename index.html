@@ -10,6 +10,8 @@
   <meta property="og:image" content="./og-image.jpg" />
   <meta name="theme-color" content="#0d0b10" />
   <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <!-- Garante que avisos escondidos continuem escondidos mesmo se o CSS principal não carregar -->
+  <style>.hidden { display: none !important; }</style>
 </head>
 <body>
   <canvas class="webgl" aria-label="Mundo 3D do portfólio"></canvas>
@@ -73,7 +75,9 @@
   </section>
 
   <div id="no-webgl" class="hidden">
-    <p>Seu navegador não suporta WebGL, necessário para o mundo 3D. Use os contatos no topo da página para falar com a Marina.</p>
+    <p>Seu navegador não conseguiu iniciar o WebGL, necessário para o mundo 3D.<br />
+      Tente ativar a <strong>aceleração de hardware</strong> nas configurações do navegador ou abrir em outro navegador.<br />
+      Você também pode usar os contatos no topo da página para falar com a Marina.</p>
   </div>
 
   <script type="module" src="/src/main.js"></script>

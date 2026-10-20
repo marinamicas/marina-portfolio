@@ -3,14 +3,27 @@ import { PALETTE } from '../data/level.js'
 
 export const canvas = document.querySelector('canvas.webgl')
 
+// Tenta da configuração mais bonita para a mais compatível (placas de vídeo fracas,
+// computadores corporativos, aceleração de hardware limitada)
+const RENDERER_OPTIONS = [
+  { antialias: true, powerPreference: 'high-performance' },
+  { antialias: false },
+  { antialias: false, failIfMajorPerformanceCaveat: false, powerPreference: 'low-power' },
+]
+
 function createRenderer() {
-  try {
-    return new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' })
-  } catch (error) {
-    document.querySelector('#no-webgl').classList.remove('hidden')
-    document.querySelector('#start-screen').classList.add('hidden')
-    throw error
+  let lastError
+  for (const options of RENDERER_OPTIONS) {
+    try {
+      return new THREE.WebGLRenderer({ canvas, ...options })
+    } catch (error) {
+      lastError = error
+      console.warn('[portfolio] WebGL indisponível com', options, error)
+    }
   }
+  document.querySelector('#no-webgl').classList.remove('hidden')
+  document.querySelector('#start-screen').classList.add('hidden')
+  throw lastError
 }
 
 export const renderer = createRenderer()
