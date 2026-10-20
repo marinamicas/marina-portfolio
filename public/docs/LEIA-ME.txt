@@ -1,0 +1,6 @@
+Coloque aqui o currículo com o nome exato:
+
+  curriculo-marina-micas.pdf
+
+O botão "CV" do header aponta para ./docs/curriculo-marina-micas.pdf.
+Arquivos da pasta public/ são copiados para o dist/ sem alteração de nome.

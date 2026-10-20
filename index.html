@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Marina Micas Jardim — Portfólio</title>
+  <meta name="description" content="Portfólio gamificado de Marina Micas Jardim: UX/UI Design, Dados, Arte e Tecnologia." />
+  <meta property="og:title" content="Marina Micas Jardim — Portfólio gamificado" />
+  <meta property="og:description" content="Pedale pela trajetória de Marina Micas: Experiências e Formações em uma colagem digital 3D." />
+  <meta property="og:image" content="./og-image.jpg" />
+  <meta name="theme-color" content="#0d0b10" />
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+</head>
+<body>
+  <canvas class="webgl" aria-label="Mundo 3D do portfólio"></canvas>
+
+  <!-- HUD: header fixo com recortes de contato -->
+  <header class="hud-header">
+    <nav class="hud-links" aria-label="Contatos">
+      <a href="https://www.linkedin.com/in/SEU-PERFIL" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <img src="/src/assets/ui/icons/linkedin.svg" alt="" /><span>LinkedIn</span>
+      </a>
+      <a href="https://github.com/SEU-USUARIO" target="_blank" rel="noopener" aria-label="GitHub">
+        <img src="/src/assets/ui/icons/github.svg" alt="" /><span>GitHub</span>
+      </a>
+      <a href="mailto:seu-email@exemplo.com" aria-label="E-mail">
+        <img src="/src/assets/ui/icons/email.svg" alt="" /><span>E-mail</span>
+      </a>
+      <a href="https://wa.me/55DDDNUMERO" target="_blank" rel="noopener" aria-label="WhatsApp">
+        <img src="/src/assets/ui/icons/whatsapp.svg" alt="" /><span>WhatsApp</span>
+      </a>
+      <a href="./docs/curriculo-marina-micas.pdf" target="_blank" rel="noopener" aria-label="Currículo em PDF">
+        <img src="/src/assets/ui/icons/cv.svg" alt="" /><span>Currículo (PDF)</span>
+      </a>
+    </nav>
+  </header>
+
+  <div class="hud-progress" aria-live="polite">
+    <span id="progress-label">Conhecimento sobre Marina: 0%</span>
+    <div class="bar"><div id="progress-fill"></div></div>
+  </div>
+
+  <div class="hud-actions">
+    <div class="rewind">
+      <button id="btn-rewind" aria-haspopup="true" aria-expanded="false">⟲ Rebobinar</button>
+      <div class="rewind-menu" role="menu">
+        <button id="btn-rewind-fork" role="menuitem">⟲ Para a bifurcação</button>
+        <button id="btn-rewind-start" role="menuitem">⟲⟲ Para o início</button>
+      </div>
+    </div>
+    <button id="btn-inventory">✂ Inventário <span id="inventory-count">0/0</span></button>
+    <button id="btn-exit">Sair</button>
+  </div>
+
+  <div id="toast" role="status"></div>
+
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <button class="modal-close" aria-label="Fechar">×</button>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Tela inicial -->
+  <section id="start-screen">
+    <div class="start-card">
+      <p class="tag">Portfólio gamificado</p>
+      <h1>Marina Micas<br />Jardim</h1>
+      <p>Arte + tecnologia. Pedale pelas ruas de Experiências e Formações e atropele os recortes para desvendar a trajetória.</p>
+      <button id="btn-start" class="btn" disabled>Recortando papéis…</button>
+      <small>W A S D / setas para pedalar · Shift acelera · no celular, arraste na tela</small>
+    </div>
+  </section>
+
+  <div id="no-webgl" class="hidden">
+    <p>Seu navegador não suporta WebGL, necessário para o mundo 3D. Use os contatos no topo da página para falar com a Marina.</p>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
