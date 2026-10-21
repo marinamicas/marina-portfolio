@@ -112,7 +112,8 @@ marina-portfolio/
     │   ├── state.js        ← inventário/progresso salvo na aba do navegador
     │   ├── timeMachine.js  ← rebobinar, viagens pelo inventário, reset do mundo
     │   ├── CameraRig.js    ← câmera que segue a bike
-    │   ├── input.js        ← teclado, joystick, pinça e roda do mouse (zoom)
+    │   ├── input.js        ← teclado, roda do mouse (zoom) e as sensibilidades (SETTINGS)
+    │   ├── pointerControls.js ← arrastar a bike, arrastar o cenário (pan) e pinça (mouse e dedo)
     │   ├── device.js       ← descobre se o visitante usa dedo (celular) ou mouse (PC)
     │   ├── invalidGestures.js ← percebe gestos que o site não suporta
     │   ├── physics.js      ← física (gravidade, colisões)
@@ -167,10 +168,12 @@ Entender as regras ajuda a saber onde mexer:
 
    | Ação | Computador | Celular/tablet |
    |---|---|---|
-   | Pedalar e virar | W A S D / setas, ou arrastar com o botão esquerdo | arrastar um dedo (joystick) |
-   | Acelerar | Shift | — |
+   | Mover a bike | clicar na bike e arrastar | tocar na bike e arrastar |
+   | Olhar outro ponto do mapa (pan) | clicar no cenário e arrastar | tocar no cenário e arrastar |
+   | Ir longe com a bike | arrastar a bike até a borda da tela | arrastar a bike até a borda da tela |
+   | Pedalar (alternativa) | W A S D / setas, Shift acelera | — |
    | Zoom | roda do mouse, pinça no trackpad, teclas + e − | pinça com dois dedos |
-   | Zoom normal | duplo clique ou tecla 0 | toque duplo |
+   | Zoom normal + câmera de volta na bike | duplo clique ou tecla 0 | toque duplo |
    | Ajuda | botão **? Ajuda** | botão **? Ajuda** |
 
 9. **Guia de navegação**: se a pessoa tenta um gesto que o site não suporta (clicar/tocar no mapa várias
@@ -522,8 +525,8 @@ Tudo em `src/data/level.js`:
 
 ```js
 export const SETTINGS = {
-  joystick: { deadZone: 8, range: 64 },
   zoom: { wheel: 0.0014, trackpadPinch: 0.012, key: 0.16 },
+  drag: { bikeHitRadius: 44, edgeMargin: 0.1, edgeSpeed: 28 },
   tap: { maxMove: 10, maxTime: 260, doubleGap: 320 },
   longPressMs: 900,
 }
@@ -531,8 +534,9 @@ export const SETTINGS = {
 
 | Quero… | O que mudar |
 |---|---|
-| Joystick mais sensível (menos arraste para a força máxima) | Diminua `joystick.range` (ex.: `48`). |
-| Que o dedo possa tremer mais sem mover a bike | Aumente `joystick.deadZone` (ex.: `14`). |
+| Facilitar "pegar" a bike com o dedo | Aumente `drag.bikeHitRadius` (em pixels, ex.: `60`). |
+| Câmera andar mais rápido quando a bike chega na borda | Aumente `drag.edgeSpeed` (metros por segundo). |
+| Faixa da borda que faz a câmera andar mais larga | Aumente `drag.edgeMargin` (`0.1` = 10% da tela). |
 | Zoom da roda do mouse mais rápido | Aumente `zoom.wheel` (ex.: `0.002`). |
 | Zoom da pinça do trackpad mais suave | Diminua `zoom.trackpadPinch` (ex.: `0.008`). |
 | Cada toque em + / − dar mais zoom | Aumente `zoom.key`. |
@@ -544,6 +548,11 @@ export const SETTINGS = {
 this.zoomLimits = { min: 0.45, max: 1.9 }  // min = mais perto da bike; max = mais longe
 this.zoomSmoothing = 14                    // maior = segue o gesto mais rápido; menor = mais "macio"
 ```
+
+**Efeito cinematográfico do atropelo:** `src/main.js` → função `cinematicHit()`.
+`timeScale: 0.12` é o quanto o tempo desacelera (0.12 = 12% da velocidade normal) e `'+=0.35'` quanto tempo
+ele fica lento. A aproximação da câmera fica em `cinematicPunch()`, no `src/core/CameraRig.js`
+(`strength = 0.72` = a câmera chega a 72% da distância normal).
 
 **Como funciona por dentro (para curiosos):** os eventos de toque, mouse e roda só *anotam* o movimento.
 Uma vez por quadro (60 vezes por segundo), o loop do jogo em `src/main.js` pega o total com
@@ -600,7 +609,10 @@ Rode o projeto (`npm run dev`) e confira esta lista:
 - [ ] "Resetar tudo" → contador volta a `0/…` e todos os recortes ficam de pé.
 - [ ] Coletar tudo e clicar em Sair → aparece "Você zerou!" (não Game Over).
 - [ ] Roda do mouse / pinça do trackpad aproxima e afasta a câmera sem dar zoom na página; duplo clique volta ao normal.
-- [ ] No modo celular do F12: arrastar um dedo pedala, pinça dá zoom, toque duplo volta ao normal.
+- [ ] Clicar na bike e arrastar: ela acompanha o mouse exatamente e para onde for solta.
+- [ ] Clicar no cenário e arrastar: o mapa acompanha o mouse; a bike não se mexe.
+- [ ] Arrastar a bike até um recorte: câmera lenta, aproximação e tremida, e depois tudo volta ao normal.
+- [ ] No modo celular do F12: tocar na bike e arrastar, arrastar o cenário, pinça dá zoom, toque duplo volta ao normal.
 - [ ] Clicar 3 vezes seguidas no mapa abre o guia; "Não mostrar esta dica novamente" faz ele parar de aparecer.
 - [ ] O console (F12) não mostra erros em vermelho.
 

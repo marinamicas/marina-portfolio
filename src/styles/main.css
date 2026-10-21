@@ -9,10 +9,13 @@
 
 * { box-sizing: border-box; margin: 0; }
 html, body { height: 100%; overflow: hidden; background: var(--black); color: var(--white); font-family: system-ui, 'Segoe UI', sans-serif; }
-/* Jogo: sem seleção de texto, sem menu de "segurar" do iOS, sem efeito elástico nem flash azul ao tocar */
+/* Jogo: sem seleção de texto, sem menu de "segurar" do iOS, sem efeito elástico, sem "puxar para atualizar"
+   e sem flash azul ao tocar */
+html { overscroll-behavior: none; }
 body { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
 .hidden { display: none !important; }
-/* touch-action: none → o navegador não rouba os gestos do canvas (pinça e arraste são do jogo) */
+/* touch-action: none → o navegador não rouba os gestos do canvas (arrastar bike/cenário e pinça são do jogo):
+   sem rolagem da página, sem zoom do navegador e sem "puxar para atualizar" */
 .webgl { position: fixed; inset: 0; width: 100%; height: 100%; touch-action: none; outline: none; }
 /* HUD e janelas do chão: pinça não dá zoom na página; botões sem atraso de toque duplo */
 .hud-header, .hud-progress, .hud-actions, .pins, #toast { touch-action: none; }
@@ -116,15 +119,6 @@ button, a, .btn { touch-action: manipulation; }
 .pin-card .btn { padding: 8px 12px; font-size: 13px; background: var(--purple); color: var(--white); }
 .pin-card .btn:hover, .pin-card .btn:focus-visible { background: var(--black); }
 #inventory-count { display: inline-block; }
-
-/* ---------- Joystick virtual (aparece onde o dedo/mouse começa a arrastar) ---------- */
-.joystick { position: fixed; left: 0; top: 0; width: 0; height: 0; z-index: 6; pointer-events: none; opacity: 0; transition: opacity .15s;
-  will-change: transform; }
-.joystick.visible { opacity: 1; }
-.joystick::before { content: ''; position: absolute; left: -64px; top: -64px; width: 128px; height: 128px; border-radius: 50%;
-  border: 2px dashed rgba(201, 182, 255, .55); background: rgba(13, 11, 16, .25); }
-.joystick-knob { position: absolute; left: -22px; top: -22px; width: 44px; height: 44px; background: var(--purple);
-  clip-path: polygon(50% 0, 100% 100%, 0 100%); filter: drop-shadow(0 0 6px rgba(143, 92, 247, .8)); will-change: transform; }
 
 /* ---------- Modal guia de navegação ---------- */
 .guide { list-style: none; padding: 0; display: grid; gap: 12px; margin-bottom: 20px; }

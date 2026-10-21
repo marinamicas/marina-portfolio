@@ -24,6 +24,56 @@ export class CameraRig {
     this.zoomTarget = 1
     this.zoomLimits = { min: 0.45, max: 1.9 } // 0.45 = bem perto da bike; 1.9 = quase o dobro da distância
     this.zoomSmoothing = 14 // maior = segue o gesto mais rápido (14 ≈ 90% do caminho em 0,16 s)
+
+    // Pan (arrastar a tela): deslocamento da câmera em relação à bike, no chão (x, z).
+    // Enquanto `hold` é true (dedo/mouse arrastando), a câmera fica parada onde o
+    // jogador deixou, sem perseguir a bike — isso evita que o chão "fuja" do dedo.
+    this.pan = new THREE.Vector3()
+    this.hold = false
+    this.recentering = false // true = o pan volta suavemente a zero (câmera recentraliza na bike)
+    this.panBounds = null // { minX, maxX, minZ, maxZ }: até onde a câmera pode ir
+
+    // "Punch" cinematográfico: aproximação extra e passageira (atropelos)
+    this.punch = 1
+
+    this._desired = new THREE.Vector3() // vetor reaproveitado (evita criar objetos a cada frame)
+  }
+
+  /** Move a câmera no chão por (dx, dz) metros, na hora (pan do jogador e borda da tela). */
+  panBy(dx, dz) {
+    this.target.x += dx
+    this.target.z += dz
+    if (this.panBounds) {
+      const b = this.panBounds
+      this.target.x = THREE.MathUtils.clamp(this.target.x, b.minX, b.maxX)
+      this.target.z = THREE.MathUtils.clamp(this.target.z, b.minZ, b.maxZ)
+    }
+    this.recentering = false
+  }
+
+  /** Começa um arraste: a câmera para de seguir a bike até `release()`. */
+  grab() {
+    this.hold = true
+    this.recentering = false
+  }
+
+  /** Fim do arraste: guarda onde a câmera ficou em relação à bike e volta a acompanhá-la. */
+  release(subject) {
+    this.hold = false
+    this.pan.set(this.target.x - subject.x, 0, this.target.z - subject.z)
+  }
+
+  /** Volta a câmera para a bike suavemente (teclado, rebobinar, toque duplo). */
+  recenter() {
+    if (this.hold || (!this.recentering && this.pan.lengthSq() === 0)) return
+    this.recentering = true
+  }
+
+  /** Efeito de câmera do atropelo: aproxima rápido e volta devagar. */
+  cinematicPunch(strength = 0.72, duration = 1.1) {
+    gsap.timeline({ overwrite: true })
+      .to(this, { punch: strength, duration: duration * 0.18, ease: 'power3.out' })
+      .to(this, { punch: 1, duration: duration * 0.82, ease: 'power2.inOut' })
   }
 
   /** Aplica um zoom relativo em escala logarítmica (positivo afasta, negativo aproxima). */
@@ -40,10 +90,18 @@ export class CameraRig {
 
   /** Atualiza a câmera; chamado uma vez por frame com o tempo do frame e o ponto seguido. */
   update(dt, subject) {
-    if (this.following) this.target.lerp(subject, 1 - Math.exp(-this.lag * dt))
+    if (this.recentering) {
+      this.pan.multiplyScalar(Math.exp(-5 * dt)) // decaimento suave até a bike
+      if (this.pan.lengthSq() < 0.0004) {
+        this.pan.set(0, 0, 0)
+        this.recentering = false
+      }
+    }
+    // Segue "bike + pan" com atraso suave; durante um arraste (hold) fica parada
+    if (this.following && !this.hold) this.target.lerp(this._desired.copy(subject).add(this.pan), 1 - Math.exp(-this.lag * dt))
     // Amortecimento exponencial: independe da taxa de quadros (60 Hz, 120 Hz…)
     this.zoom = THREE.MathUtils.damp(this.zoom, this.zoomTarget, this.zoomSmoothing, dt)
-    this.camera.position.copy(this.target).addScaledVector(this.offset, this.zoom)
+    this.camera.position.copy(this.target).addScaledVector(this.offset, this.zoom * this.punch)
     this.lookAtPoint.copy(this.target).add(this.look)
     this.camera.lookAt(this.lookAtPoint.add(this.shakeOffset))
     this.yaw = Math.atan2(this.camera.position.x - this.lookAtPoint.x, this.camera.position.z - this.lookAtPoint.z)

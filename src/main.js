@@ -1,11 +1,12 @@
 import gsap from 'gsap'
 import './styles/main.css'
 
-import { DEFAULT_VIEW, ZONES } from './data/level.js'
+import { BOUNDS, DEFAULT_VIEW, ZONES } from './data/level.js'
 import { renderer, scene, camera, billboards } from './core/stage.js'
 import { world } from './core/physics.js'
 import { CameraRig } from './core/CameraRig.js'
 import { consumeZoom, input, readInput, SETTINGS as INPUT_SETTINGS } from './core/input.js'
+import { cancelPointerDrag, initPointerControls, updatePointerControls } from './core/pointerControls.js'
 import { setDetectorGuard } from './core/invalidGestures.js'
 import { collect, state } from './core/state.js'
 import { record, resetHistory } from './core/timeMachine.js'
@@ -39,7 +40,11 @@ for (const t of totems) {
    Câmera + zonas do level (bifurcação, encruzilhada, horizonte)
    ========================================================================== */
 const rig = new CameraRig(camera, DEFAULT_VIEW)
+rig.panBounds = BOUNDS // o pan não leva a câmera para fora do mapa
 let currentZone = null
+
+// Arrastar a bike / arrastar o cenário só valem com o jogo rodando e sem janela aberta
+initPointerControls(rig, () => playing && !ui.isOpen)
 
 function updateZones() {
   const zone = ZONES.find((z) => z.test(bike.body.position)) ?? null
@@ -52,10 +57,28 @@ function updateZones() {
 /* ==========================================================================
    Atropelar um recorte
    ========================================================================== */
+// Escala do tempo da simulação: 1 = normal. Cai por um instante no atropelo (câmera lenta).
+const sim = { timeScale: 1 }
+
+/**
+ * Efeito cinematográfico do atropelo: câmera lenta, aproximação rápida da câmera
+ * e tremida. É o ÚNICO momento com acelerações "lentas"; o resto do controle é direto.
+ */
+function cinematicHit() {
+  rig.shake(0.5, 0.45)
+  rig.recenter() // enquadra a bike, onde a explosão acontece
+  if (REDUCED_MOTION) return // quem pediu menos animação no sistema não recebe câmera lenta
+  rig.cinematicPunch()
+  gsap.timeline({ overwrite: true })
+    .to(sim, { timeScale: 0.12, duration: 0.08, ease: 'power2.out' })
+    .to(sim, { timeScale: 1, duration: 0.9, ease: 'power2.in' }, '+=0.35')
+}
+
 function hitTotem(totem) {
   const screen = totem.mesh.position.clone().project(camera)
+  cancelPointerDrag() // solta a bike: o atropelo assume o controle por um instante
   shatter(totem)
-  rig.shake()
+  cinematicHit()
   paperBurst(((screen.x + 1) / 2) * innerWidth, ((1 - screen.y) / 2) * innerHeight)
   const isNew = collect(totem.item.id)
   showPin(totem, 1)
@@ -76,11 +99,14 @@ function hitTotem(totem) {
    Loop: gsap.ticker mantém física, câmera e tweens no mesmo relógio
    ========================================================================== */
 gsap.ticker.add((time, deltaMs) => {
-  const dt = Math.min(deltaMs / 1000, 1 / 20)
+  const dt = Math.min(deltaMs / 1000, 1 / 20) // tempo real do frame (câmera e interface)
+  const simDt = dt * sim.timeScale // tempo da simulação (fica lento no atropelo)
 
+  // Ponteiro primeiro: o arraste define para onde a bike vai neste frame
+  updatePointerControls(dt)
   readInput(ui.isOpen || bike.locked)
-  updateBike(input, dt)
-  world.step(1 / 60, dt, 3)
+  updateBike(input, bike.dragging ? dt : simDt) // o arraste segue o dedo em tempo real
+  world.step(1 / 60, simDt, 3)
   clampToBounds()
   syncProps()
   syncTotems(time)
@@ -88,17 +114,26 @@ gsap.ticker.add((time, deltaMs) => {
   if (!bike.locked && !ui.isOpen) {
     const hit = checkHits()
     if (hit) hitTotem(hit)
+  } else {
+    // teletransportes (rebobinar, viagens) não contam como "passar por cima" de recortes
+    bike.prevPos.x = bike.body.position.x
+    bike.prevPos.z = bike.body.position.z
   }
   updateZones()
   record(dt)
-  animateEnvironment(time, dt, bike.body.position)
+  animateEnvironment(time, simDt, bike.body.position)
 
   // Zoom acumulado pelos gestos desde o último frame (sempre consumido, para não "vazar" depois)
   const zoom = consumeZoom()
   if (playing && !ui.isOpen) {
-    if (zoom.reset) rig.resetZoom()
+    if (zoom.reset) {
+      rig.resetZoom()
+      rig.recenter()
+    }
     rig.zoomBy(zoom.delta)
   }
+  // Pedalando no teclado ou com a bike travada (intro, rebobinar, viagens): câmera volta para a bike
+  if (bike.locked || input.forward || input.turn) rig.recenter()
 
   rig.lag = bike.locked ? 14 : 5 // rebobinar/viagens: câmera cola na bike
   rig.update(dt, bike.body.position)
@@ -127,7 +162,7 @@ function startIntro() {
     toast(
       state.collected.length
         ? `Bem-vindo de volta! Você já conhece ${state.collected.length} de ${totems.length} recortes.`
-        : 'Acelere e atropele o recorte da Marina Micas!',
+        : 'Arraste a bike até o recorte da Marina Micas!',
     )
   })
 }
@@ -155,4 +190,4 @@ startButton.addEventListener('click', () => {
   })
 })
 
-if (import.meta.env.DEV) window.__game = { scene, world, rig, bike, totems, state, input: INPUT_SETTINGS }
+if (import.meta.env.DEV) window.__game = { scene, camera, world, rig, bike, totems, state, sim, input: INPUT_SETTINGS }

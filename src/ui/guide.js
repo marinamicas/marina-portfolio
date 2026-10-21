@@ -41,9 +41,9 @@ function setGuideDisabled(disabled) {
 
 // Frase de abertura conforme o gesto que disparou o aviso
 const REASONS = {
-  tap: 'Tocar no mapa não leva a bike até o ponto.',
-  click: 'Clicar no mapa não leva a bike até o ponto.',
-  'long-press': 'Segurar o dedo parado não faz nada por aqui.',
+  tap: 'Para mover a bike, toque nela e arraste até os recortes.',
+  click: 'Para mover a bike, clique nela e arraste até os recortes.',
+  'long-press': 'Segurar o dedo parado não faz nada: arraste a bike ou o cenário.',
   'multi-finger': 'Gestos com três ou mais dedos não são usados.',
   'right-click': 'O botão direito do mouse não é usado no mundo 3D.',
   'middle-click': 'O botão do meio do mouse não é usado no mundo 3D.',
@@ -56,21 +56,22 @@ const GUIDES = {
   touch: {
     title: 'Como navegar no celular',
     items: [
-      ['☝️', 'Arraste um dedo', 'O ponto onde você toca vira um joystick: para cima pedala, para baixo dá ré, para os lados vira.'],
+      ['🚲', 'Toque na bike e arraste', 'Ela vai exatamente para onde seu dedo for. Leve-a até a borda da tela para ir mais longe.'],
+      ['☝️', 'Arraste o cenário', 'Toque em qualquer área livre e arraste para olhar outro ponto do mapa.'],
       ['🤏', 'Pinça com dois dedos', 'Afaste os dedos para aproximar a câmera e junte para afastar.'],
-      ['👆', 'Toque duplo', 'Volta o zoom ao normal.'],
-      ['💥', 'Atropele os recortes', 'Passe por cima deles pedalando para abrir a história de cada um.'],
+      ['👆', 'Toque duplo', 'Volta o zoom ao normal e a câmera para a bike.'],
+      ['💥', 'Atropele os recortes', 'Arraste a bike por cima deles para abrir a história de cada um.'],
       ['✂', 'Botões embaixo', 'Inventário leva até os recortes conquistados; Rebobinar volta no caminho.'],
     ],
   },
   desktop: {
     title: 'Como navegar no computador',
     items: [
-      ['⌨️', 'W A S D ou setas', 'Pedala, dá ré e vira. Segure Shift para acelerar.'],
-      ['🖱️', 'Arrastar com o botão esquerdo', 'Funciona como joystick: arraste para cima para pedalar e para os lados para virar.'],
+      ['🚲', 'Clique na bike e arraste', 'Ela vai exatamente para onde o mouse for. Leve-a até a borda da tela para ir mais longe.'],
+      ['🖱️', 'Arraste o cenário', 'Clique em qualquer área livre e arraste para olhar outro ponto do mapa.'],
       ['🔍', 'Roda do mouse ou pinça no trackpad', 'Aproxima e afasta a câmera. As teclas + e − também funcionam.'],
-      ['↺', 'Duplo clique ou tecla 0', 'Volta o zoom ao normal.'],
-      ['💥', 'Atropele os recortes', 'Passe por cima deles pedalando. Esc fecha as janelas.'],
+      ['↺', 'Duplo clique ou tecla 0', 'Volta o zoom ao normal e a câmera para a bike.'],
+      ['⌨️', 'W A S D ou setas', 'Também pedalam a bike (Shift acelera). Esc fecha as janelas.'],
     ],
   },
 }

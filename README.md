@@ -23,15 +23,17 @@ Em modo dev, `window.__game` expõe `scene`, `world`, `rig`, `bike`, `totems` e 
 
 | Ação | Teclado | Celular |
 |---|---|---|
-| Pedalar / ré | W / S ou ↑ / ↓ | arrastar para cima / baixo |
-| Virar | A / D ou ← / → | arrastar para os lados |
-| Acelerar | Shift | — |
+| Mover a bike | clicar na bike e arrastar | tocar na bike e arrastar |
+| Olhar o mapa (pan) | clicar no cenário e arrastar | tocar no cenário e arrastar |
+| Pedalar (alternativa) | W A S D / setas, Shift acelera | — |
 | Zoom | roda do mouse, pinça no trackpad ou + / − | pinça com dois dedos |
-| Zoom normal | duplo clique ou 0 | toque duplo |
+| Zoom normal + câmera na bike | duplo clique ou 0 | toque duplo |
 | Guia de navegação | botão **? Ajuda** | botão **? Ajuda** |
 | Fechar janela | Esc | botão × |
 
 Gestos não suportados (cliques/toques soltos repetidos, botão direito, três dedos, segurar o dedo parado, deslizar para os lados, teclas sem função) abrem um **guia de navegação** adaptado ao aparelho (touch ou PC). O visitante pode marcar **"Não mostrar esta dica novamente"**, e a escolha fica salva no `localStorage`.
+
+A bike arrastada segue exatamente o ponto do chão sob o dedo/mouse, sem inércia. Levá-la até a borda da tela faz a câmera andar junto. A única desaceleração é o efeito cinematográfico do atropelo (câmera lenta + aproximação + tremida).
 
 ## Onde editar o conteúdo
 
@@ -100,7 +102,8 @@ src/
 │   ├── stage.js         # renderer, cena, câmera, luzes
 │   ├── physics.js       # mundo cannon-es + materiais de contato
 │   ├── CameraRig.js     # câmera que segue a bike; API pronta para GSAP (frame, cinematic, shake)
-│   ├── input.js         # teclado, joystick por arraste, pinça, roda do mouse/trackpad (zoom)
+│   ├── input.js         # teclado, roda do mouse/trackpad (zoom), gestos do Safari, sensibilidades
+│   ├── pointerControls.js # Pointer Events: arrastar a bike, arrastar o cenário (pan), pinça
 │   ├── device.js        # detecta touch (celular/tablet) x mouse/teclado (PC)
 │   ├── invalidGestures.js # detector de gestos não suportados
 │   ├── state.js         # progresso no sessionStorage (sem banco de dados)

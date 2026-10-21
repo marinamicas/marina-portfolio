@@ -4,7 +4,7 @@ import gsap from 'gsap'
 import { scene, billboards } from '../core/stage.js'
 import { world } from '../core/physics.js'
 import { GROUPS, ITEMS } from '../data/level.js'
-import { rand } from '../utils/helpers.js'
+import { clamp, distToSegment, rand } from '../utils/helpers.js'
 import { applyCutout, makeCutoutTexture, makeTextPlane } from '../utils/textures.js'
 import { bike } from './bike.js'
 
@@ -81,8 +81,10 @@ function spawnFragment(tri, totem, material, size) {
   body.position.set(worldPos.x, worldPos.y, worldPos.z)
   body.quaternion.set(mesh.quaternion.x, mesh.quaternion.y, mesh.quaternion.z, mesh.quaternion.w)
   const away = new THREE.Vector3(worldPos.x - bike.body.position.x, 0, worldPos.z - bike.body.position.z).normalize()
-  const bv = bike.body.velocity
-  body.velocity.set(away.x * rand(3, 7) + bv.x * 0.5, rand(3, 8), away.z * rand(3, 7) + bv.z * 0.5)
+  // herda metade da velocidade da bike, limitada (um arraste rápido não arremessa os pedaços longe demais)
+  const bvx = clamp(bike.body.velocity.x, -12, 12)
+  const bvz = clamp(bike.body.velocity.z, -12, 12)
+  body.velocity.set(away.x * rand(3, 7) + bvx * 0.5, rand(3, 8), away.z * rand(3, 7) + bvz * 0.5)
   body.angularVelocity.set(rand(-10, 10), rand(-10, 10), rand(-10, 10))
   world.addBody(body)
   fragments.push({ mesh, body })
@@ -169,15 +171,22 @@ export function clearFragments() {
   )
 }
 
-/** Retorna o totem atropelado neste frame (ou null). */
+/**
+ * Retorna o totem atropelado neste frame (ou null).
+ * - No teclado é preciso estar em movimento (HIT_SPEED).
+ * - No arraste basta encostar. Como um arraste rápido pode "pular" vários metros em
+ *   um frame, testamos o segmento entre a posição anterior e a atual, não só o ponto.
+ */
 export function checkHits() {
-  if (Math.abs(bike.speed) < HIT_SPEED) return null
   const p = bike.body.position
+  const from = { ...bike.prevPos }
+  bike.prevPos.x = p.x
+  bike.prevPos.z = p.z
+  if (!bike.dragging && Math.abs(bike.speed) < HIT_SPEED) return null
   for (const t of totems) {
     if (!t.alive) continue
-    const dx = p.x - t.mesh.position.x
-    const dz = p.z - t.mesh.position.z
-    if (dx * dx + dz * dz < (t.w * 0.5 + 0.8) ** 2) return t
+    const d = distToSegment(t.mesh.position.x, t.mesh.position.z, [from.x, from.z], [p.x, p.z])
+    if (d < t.w * 0.5 + 0.8) return t
   }
   return null
 }
