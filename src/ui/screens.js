@@ -194,10 +194,27 @@ export function enableExitGuard(isActive) {
   exitGuardActive = isActive
 }
 
+/**
+ * Até quando (relógio performance.now(), em ms) o aviso de saída fica desligado.
+ * Clicar num contato direto (link com data-viewer-skip, ex.: mailto:) faz alguns navegadores
+ * dispararem beforeunload mesmo sem sair da página; sem esta pausa apareceria "Sair do site?"
+ * e depois o Game Over só por ter clicado no e-mail.
+ */
+let skipExitGuardUntil = 0
+// Fase de captura: anota o clique antes de o navegador seguir o link
+document.addEventListener(
+  'click',
+  (e) => {
+    if (e.target.closest?.('a[data-viewer-skip]')) skipExitGuardUntil = performance.now() + 1500 // 1,5 s de pausa
+  },
+  true,
+)
+
 // beforeunload: disparado quando a aba vai fechar/recarregar. preventDefault + returnValue
 // fazem o navegador perguntar "Sair do site?". O setTimeout só roda se a pessoa ficar.
 addEventListener('beforeunload', (e) => {
   if (!exitGuardActive() || isComplete()) return
+  if (performance.now() < skipExitGuardUntil) return // acabou de clicar num contato direto (ex.: e-mail)
   e.preventDefault()
   e.returnValue = '' // navegadores mais antigos exigem returnValue para mostrar o aviso
   setTimeout(() => {

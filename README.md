@@ -339,7 +339,8 @@ marina-portfolio/
 - **Placas magnéticas:** ao passar perto de uma placa sem virar, a bike é puxada suavemente para a rua que ela indica.
 - **Inventário:** mostra os recortes conquistados e se o link "saiba mais" foi aberto. Clicar num recorte leva a bike até ele.
 - **Game Over:** só ao tentar **fechar ou recarregar a aba** sem 100% do inventário (aviso nativo do navegador; se a pessoa ficar, aparece o Game Over).
-- **Links externos:** abrem num visualizador em tela cheia dentro do jogo. Sites que proíbem iframe mostram um cartão com "Copiar link".
+- **Contatos do topo** (LinkedIn, GitHub, e-mail, WhatsApp, currículo, também nas janelas "Zerou", "Contatos" e "Sobre"): abrem **direto** no destino, em nova aba (o e-mail abre o app de e-mail). Isso vem do atributo `data-viewer-skip` em cada `<a>` do `index.html`.
+- **Links "Saiba mais" dos recortes:** abrem num visualizador em tela cheia dentro do jogo. Sites que proíbem iframe mostram um cartão com "Copiar link". PDFs no celular mostram um cartão com "Abrir PDF" e "Baixar", porque celulares não exibem PDF dentro da página.
 - **Contador de visitantes:** via API gratuita [Abacus](https://abacus.jasoncameron.dev); configuração em `VISITORS` (`level.js`).
 - **Sobre a Marina:** a miniatura da foto abre a janela com foto, apresentação, easter egg da bike e contatos.
 - **Zerou:** aparece quando o último recorte é atropelado.

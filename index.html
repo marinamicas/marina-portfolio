@@ -157,26 +157,35 @@
 
   <!-- HUD: header fixo com recortes de contato. Os mesmos links são copiados para as janelas "Zerou", "Contatos" e "Sobre" -->
   <header class="hud-header">
+    <!--
+      Contatos abrem DIRETO no destino, sem passar pelo visualizador em tela cheia (src/ui/viewer.js):
+      - data-viewer-skip: o visualizador ignora o link;
+      - target="_blank" rel="noopener": o site abre em nova aba e o jogo continua aberto nesta
+        (o progresso não se perde e o aviso "Sair do site?" não aparece);
+      - o e-mail (mailto:) não usa nova aba: ele chama o app de e-mail do aparelho.
+      Para um contato voltar a abrir dentro do jogo, apague data-viewer-skip e target dele.
+    -->
     <nav class="hud-links" aria-label="Contatos">
-      <!-- Troque SEU-PERFIL pelo final do endereço do seu LinkedIn -->
-      <a href="https://www.linkedin.com/in/marinamicas/" aria-label="LinkedIn">
+      <!-- LinkedIn: endereço completo do perfil -->
+      <a href="https://www.linkedin.com/in/marinamicas/" aria-label="LinkedIn" target="_blank" rel="noopener" data-viewer-skip>
         <img src="/src/assets/ui/icons/linkedin.png" alt="" /><span>LinkedIn</span>
       </a>
-      <a href="https://github.com/marinamicas" aria-label="GitHub">
+      <a href="https://github.com/marinamicas" aria-label="GitHub" target="_blank" rel="noopener" data-viewer-skip>
         <img src="/src/assets/ui/icons/github.png" alt="" /><span>GitHub</span>
       </a>
       <!-- Mantenha o "mailto:" e troque só o e-mail -->
-      <a href="mailto:marinamicas@gmail.com" aria-label="E-mail">
+      <a href="mailto:marinamicas@gmail.com" aria-label="E-mail" data-viewer-skip>
         <img src="/src/assets/ui/icons/email.png" alt="" /><span>E-mail</span>
       </a>
       <!-- WhatsApp: 55 + DDD + número, só dígitos (ex.: https://wa.me/5521999998888) -->
-      <a href="https://wa.me/5521985487666" aria-label="WhatsApp">
+      <a href="https://wa.me/5521985487666" aria-label="WhatsApp" target="_blank" rel="noopener" data-viewer-skip>
         <img src="/src/assets/ui/icons/whatsapp.png" alt="" /><span>WhatsApp</span>
       </a>
       <!-- Currículo: o PDF PRECISA estar em public/docs/curriculo-marina-micas.pdf.
            Só a pasta public/ vai para o site publicado; um PDF na pasta docs/ da raiz funciona no
-           npm run dev, mas dá erro 404 no GitHub Pages. -->
-      <a href="./docs/curriculo-marina-micas.pdf" aria-label="Currículo em PDF" target="_blank">
+           npm run dev, mas dá erro 404 no GitHub Pages.
+           Abre direto no leitor de PDF do navegador/celular, em nova aba. -->
+      <a href="./docs/curriculo-marina-micas.pdf" aria-label="Currículo em PDF" target="_blank" rel="noopener" data-viewer-skip>
         <img src="/src/assets/ui/icons/curriculo.png" alt="" /><span>Currículo (PDF)</span>
       </a>
     </nav>
@@ -244,8 +253,8 @@
     <section style="padding: 24px; max-width: 640px; margin: 0 auto; line-height: 1.5">
       <h2>Marina Micas Jardim — UX/UI Designer em transição para dados</h2>
       <p>Este portfólio é um jogo em 3D que precisa de JavaScript para funcionar. Ative o JavaScript ou use os links de contato:
-        <a href="https://www.linkedin.com/in/SEU-PERFIL">LinkedIn</a> · <a href="https://github.com/marinamicas">GitHub</a> ·
-        <a href="mailto:seu-email@exemplo.com">E-mail</a>.</p>
+        <a href="https://www.linkedin.com/in/marinamicas/">LinkedIn</a> · <a href="https://github.com/marinamicas">GitHub</a> ·
+        <a href="mailto:marinamicas@gmail.com">E-mail</a> · <a href="https://wa.me/5521985487666">WhatsApp</a>.</p>
     </section>
   </noscript>
 

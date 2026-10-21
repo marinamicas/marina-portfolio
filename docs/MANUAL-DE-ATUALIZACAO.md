@@ -632,15 +632,20 @@ simular a pinça com dois dedos.
 
 **Arquivo:** `src/ui/viewer.js`.
 
-Todo link para outro site, PDF, e-mail ou telefone é interceptado e aberto por cima do jogo, em tela cheia.
-O jogo fica pausado e, ao fechar (botão **✕ Voltar ao jogo**, tecla **Esc** ou botão **voltar** do celular),
-tudo continua exatamente de onde parou. Nada abre em nova aba.
+Links para outro site, PDF, e-mail ou telefone (por exemplo, os "Saiba mais" dos recortes) são interceptados e
+abertos por cima do jogo, em tela cheia. O jogo fica pausado e, ao fechar (botão **✕ Voltar ao jogo**, tecla **Esc**
+ou botão **voltar** do celular), tudo continua exatamente de onde parou.
+
+**Exceção: os contatos do topo** (LinkedIn, GitHub, e-mail, WhatsApp e currículo) têm `data-viewer-skip` e abrem
+**direto** no destino, em nova aba; o e-mail abre o app de e-mail. Como as janelas "Zerou", "Contatos" e "Sobre"
+copiam o topo da página, elas seguem a mesma regra. Para um contato voltar ao visualizador, apague
+`data-viewer-skip` e `target="_blank"` dele no `index.html`.
 
 | Tipo de link | O que aparece |
 |---|---|
 | Site comum (ex.: portfólio no Behance, artigo) | O site dentro de um quadro (iframe) |
 | YouTube / Vimeo | O player de vídeo (o endereço é convertido para a versão "embed") |
-| PDF (ex.: currículo) | O PDF no leitor do navegador; no celular, pelo visualizador do Google (só com o site publicado) |
+| PDF | No computador, o PDF no leitor do navegador. No celular, um cartão com "Abrir PDF" (leitor do aparelho, nova aba) e "Baixar": celulares não mostram PDF dentro da página e o visualizador do Google recusa arquivos grandes |
 | E-mail / telefone | Cartão com o endereço, "Copiar" e "Abrir app de e-mail" / "Ligar" |
 | LinkedIn, GitHub, WhatsApp, Instagram… | Cartão com o link e "Copiar" (esses sites proíbem ser exibidos dentro de outras páginas) |
 
@@ -768,7 +773,7 @@ Rode o projeto (`npm run dev`) e confira esta lista:
 - [ ] Atropelar a Marina mostra o texto de apresentação em 3D.
 - [ ] Atropelar cada recorte: abre a janela, o contador do inventário aumenta 1, e depois aparece a janela no chão.
 - [ ] O "Saiba mais" (janela e janela do chão) abre no visualizador em tela cheia, sem nova aba, e o inventário mostra "🔗 saiba mais visitado".
-- [ ] Os links do topo (LinkedIn, GitHub, e-mail, WhatsApp, currículo) abrem no visualizador; Esc e "voltar" fecham.
+- [ ] Os contatos do topo (LinkedIn, GitHub, WhatsApp, currículo) abrem direto em nova aba e o e-mail abre o app de e-mail, sem aviso de saída.
 - [ ] Rebobinar para a bifurcação e para o início: os recortes conquistados **continuam destruídos**.
 - [ ] Apertar F5: os recortes conquistados continuam destruídos e o contador continua igual.
 - [ ] Com recortes faltando, recarregar a página (F5) → aviso do navegador → "Cancelar/Ficar" → Game Over.

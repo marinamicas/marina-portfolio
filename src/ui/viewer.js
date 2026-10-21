@@ -18,8 +18,10 @@ import { ui } from './modal.js'
      "Copiar link", em vez de um quadro em branco.
    - E-mail e telefone mostram um cartão com "Copiar" e "Abrir app"/"Ligar".
    - Vídeos do YouTube/Vimeo são convertidos para a URL "embed".
-   - PDFs: no computador abrem no leitor do navegador; no celular (site publicado)
-     pelo visualizador do Google Docs.
+   - PDFs: no computador abrem no leitor do navegador, dentro do iframe; no
+     celular/tablet aparece um cartão com "Abrir PDF" (leitor nativo, outra aba)
+     e "Baixar". Celulares não exibem PDF em iframe, e o visualizador do Google
+     Docs recusa arquivos grandes como o currículo.
    - Fechar (botão, Esc ou "voltar" do celular) devolve o jogador exatamente
      para onde estava: o jogo fica pausado enquanto o visualizador está aberto
      (ui.viewerOpen = true faz o loop de main.js não rodar).
@@ -167,10 +169,22 @@ function render(url) {
     return card('🔒', host, 'Este site não permite ser exibido dentro de outras páginas. Copie o link para visitá-lo depois, sem perder seu progresso no jogo.')
   }
   if (url.pathname.toLowerCase().endsWith('.pdf')) {
-    // Celulares não mostram PDF dentro de iframe: usa o visualizador do Google (só funciona com o site publicado)
-    const isPublic = !/^(localhost|127\.|192\.168\.)/.test(location.hostname)
-    if (isTouchDevice() && isPublic) return iframeHTML(`https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(url.href)}`)
-    return iframeHTML(url.href, { sandbox: false }) // o leitor de PDF do navegador não funciona com sandbox
+    // Computador: o leitor de PDF do próprio navegador funciona dentro do iframe (sem sandbox, senão ele não carrega).
+    if (!isTouchDevice()) return iframeHTML(url.href, { sandbox: false })
+    // Celular/tablet: o Chrome do Android NÃO mostra PDF dentro de iframe, e o visualizador do Google Docs
+    // (que usávamos antes) recusa arquivos grandes ("Este arquivo é grande demais para ser visualizado").
+    // Então mostramos um cartão que abre o PDF no leitor nativo do aparelho, em OUTRA aba:
+    // - target="_blank": o jogo continua aberto nesta aba (o progresso não se perde e o aviso de saída não dispara);
+    // - data-viewer-skip: este link não é interceptado de novo pelo próprio visualizador;
+    // - download: o botão "Baixar" salva o arquivo no aparelho.
+    const file = url.pathname.split('/').pop()
+    return card(
+      '📄',
+      'Documento em PDF', // genérico: vale para qualquer PDF (o nome do link já aparece na barra do topo)
+      'Abra o PDF no leitor do seu celular (em outra aba, o jogo continua aqui) ou baixe o arquivo.',
+      `<a class="btn" href="${escapeHTML(url.href)}" target="_blank" rel="noopener" data-viewer-skip>Abrir PDF</a>
+       <a class="btn" href="${escapeHTML(url.href)}" download="${escapeHTML(file)}" data-viewer-skip>Baixar</a>`,
+    )
   }
   return iframeHTML(embeddableUrl(url))
 }

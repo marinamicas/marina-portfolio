@@ -108,6 +108,20 @@ const item = (id, group, title, subtitle, x, z, extra = {}) => ({
   ...extra, // qualquer chave passada em `extra` sobrescreve os padrões acima
 })
 
+/*
+  Recortes em formato de CARTÃO (imagens das Experiências, 285 px de largura e alturas diferentes).
+  Todos ficam com a mesma largura no mundo (CARD_WIDTH metros); a altura acompanha a altura da imagem,
+  então nenhum cartão fica esticado nem com o texto miúdo.
+  - CARD_WIDTH: largura de todos os cartões em metros. Aumente para cartões maiores (mais legíveis de longe).
+  - CARD_IMAGE_WIDTH: largura das imagens dos cartões, em pixels (todas foram exportadas com 285 px).
+  Uso: size: cardSize(altura da imagem em pixels). Ex.: imagem de 285×563 → cardSize(563).
+  Observação: o jogo já recalcula a largura pela proporção real da imagem ao carregar; cardSize
+  define a ALTURA certa para que essa largura final dê CARD_WIDTH.
+*/
+const CARD_WIDTH = 2.4
+const CARD_IMAGE_WIDTH = 285
+const cardSize = (imageHeightPx) => [CARD_WIDTH, (CARD_WIDTH * imageHeightPx) / CARD_IMAGE_WIDTH]
+
 /**
  * ★ Lista de recortes (objetos do jogo). Para adicionar um, copie uma linha e mude
  * id, grupo, textos e posição. O inventário, a porcentagem e o "zerou" se ajustam sozinhos.
@@ -123,15 +137,39 @@ export const ITEMS = [
     reveal: true, // revela o texto em 3D em vez de abrir janela
   }),
 
-  // FASE 2 — Experiências › Desenvolvimento
-  item('dev-1', 'desenvolvimento', 'Projeto Dev 1', 'Desenvolvimento', -46, -100, { image: 'experiencias/desenvolvimento/dev-1.webp' }),
-  item('dev-2', 'desenvolvimento', 'Projeto Dev 2', 'Desenvolvimento', -46, -128, { image: 'experiencias/desenvolvimento/dev-2.webp' }),
+  // FASE 2 — Experiências › Desenvolvimento (ordem cronológica: o mais antigo aparece primeiro na rua)
+  item('dev-1', 'desenvolvimento', 'Redes Neurais FFNN', '2022', -46, -100, {
+    image: 'experiencias/desenvolvimento/desenvolvimento - Redes Neurais FFNN.png',
+    size: cardSize(773),
+    body: 'Trabalho de Conclusão de Curso da pós da PUC Minas Virtual para ser especialista em Inteligência Artificial e Aprendizagem de Máquina (2022). Ferramentas e temas: Feed-forward Neural Network, Machine Learning, Python, TensorFlow, Keras, Scikit-learn, Pandas, NumPy, Jupyter Notebook, Colaboratory, HTML, CSS, GitHub Pages e VS Code.',
+  }),
+  item('dev-2', 'desenvolvimento', 'Triplo brilho', '2023', -46, -128, {
+    image: 'experiencias/desenvolvimento/desenvolvimento - Triplo brilho.png',
+    size: cardSize(563),
+    body: 'Fiz um projeto chamado Triplo Brilho, que explora o terceiro diamante do tão conhecido duplo diamante em nossos processos de design (2023). Ferramentas e temas: Triplo diamante, Figma for VS Code, HTML, CSS, JavaScript, GitHub Pages e web design.',
+  }),
   // Experiências › Design
-  item('design-1', 'design', 'Projeto Design 1', 'UX/UI', -30, -100, { image: 'experiencias/design/design-1.webp' }),
-  item('design-2', 'design', 'Projeto Design 2', 'UX/UI', -30, -128, { image: 'experiencias/design/design-2.webp' }),
+  item('design-1', 'design', 'Equipe UX/UI Design', '2024', -30, -100, {
+    image: 'experiencias/design/design - equipe UX UI Design.png',
+    size: cardSize(605),
+    body: 'Realizei uma pesquisa com 4 categorias de resumos teóricos para ter um fundamento na estruturação de uma equipe de UX/UI design (2024). Temas: estrutura de equipe, Experiência da Marca (BX), Experiência do Cliente (CX), maturidade UX e profissões de UX/UI design.',
+  }),
+  item('design-2', 'design', 'Minha marca', '2024', -30, -128, {
+    image: 'experiencias/design/design - Minha marca.png',
+    size: cardSize(479),
+    body: 'A ideia da marca veio da tulipa por conta de ser uma flor que é única em cada caule, retratando assim a singularidade do ser humano (2024). Ferramentas e temas: Figma, logo, psicologia da cor, rebranding e tipografia.',
+  }),
   // Experiências › Diversidade
-  item('div-1', 'diversidade', 'Diversidade 1', 'Diversidade', -14, -100, { image: 'experiencias/diversidade/div-1.webp' }),
-  item('div-2', 'diversidade', 'Diversidade 2', 'Diversidade', -14, -128, { image: 'experiencias/diversidade/div-2.webp' }),
+  item('div-1', 'diversidade', 'Jogo das Diagonais', '2018', -14, -100, {
+    image: 'experiencias/diversidade/diversidade - Jogo das Diagonais.png',
+    size: cardSize(731),
+    body: 'Proponho um modelo de aprendizado lúdico com games inteligentes usando conteúdos reais em várias áreas, conectando teorias e conceitos (2018). Temas: aprendizagem metacognitiva, artigo científico, cognição, design interativo, game educativo, game inteligente, mapa mental, protótipo analógico e tridimensão da aprendizagem.',
+  }),
+  item('div-2', 'diversidade', 'Ícones Inteligentes', '2018', -14, -128, {
+    image: 'experiencias/diversidade/diversidade - Ícones Inteligentes.png',
+    size: cardSize(563),
+    body: 'Destaco a importância de criar uma exibição para ícones inteligentes dos nossos arquivos digitais, organizando e centralizando a aprendizagem (2018). Temas: arquivo digital, artigo científico, cognição, ícone inteligente, mapa mental e repositório digital.',
+  }),
 
   // FASE 2 — Formações (rua única)
   item('edu-1', 'formacoes', 'Formação 1', 'Informática', 30, -84, { image: 'formacoes/edu-1.webp' }),
