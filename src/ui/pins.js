@@ -15,7 +15,7 @@ const FADE_DIST = 40
 
 export const linksHTML = (item) =>
   item.links
-    .map((l) => `<a class="btn" href="${encodeURI(l.url)}" target="_blank" rel="noopener" data-link-id="${item.id}">${escapeHTML(l.label)} ↗</a>`)
+    .map((l) => `<a class="btn" href="${encodeURI(l.url)}" data-link-id="${item.id}">${escapeHTML(l.label)} ↗</a>`)
     .join('')
 
 const layer = document.createElement('div')

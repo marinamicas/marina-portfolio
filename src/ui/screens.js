@@ -3,6 +3,7 @@ import { GROUPS, ITEMS, TEXTS } from '../data/level.js'
 import { isComplete, markLink, markWon, onStateChange, progress, state } from '../core/state.js'
 import { hasReturnPoint, returnToPrevious, rewind, travelTo } from '../core/timeMachine.js'
 import { ui } from './modal.js'
+import { loadVisitors, visitorsSinceLabel } from '../core/visitors.js'
 import { linksHTML } from './pins.js'
 import { escapeHTML } from '../utils/helpers.js'
 
@@ -75,17 +76,32 @@ export function showRetryChoice() {
   )
 }
 
-/** Sair com recortes faltando. */
+/** Game Over: a pessoa tentou fechar/recarregar a aba com recortes faltando e escolheu ficar. */
 export function showGameOver() {
   ui.open(
     `<p class="tag">${Math.round(progress() * 100)}% da trajetória</p>
      <h2>Game Over!</h2>
      <p>${TEXTS.gameOver}</p>
      <div class="actions">
+       <button class="btn" data-action="close">Continuar jogando</button>
        <button class="btn" data-action="retry">Tentar novamente</button>
        <button class="btn ghost" data-action="contacts">Ir aos contatos</button>
      </div>`,
     { className: 'game-over' },
+  )
+}
+
+/** Botão Resetar: confirma antes de apagar todo o inventário e recomeçar do zero. */
+export function showResetConfirm() {
+  const n = state.collected.length
+  ui.open(
+    `<p class="tag">${n}/${ITEMS.length} recortes no inventário</p>
+     <h2>Resetar o jogo?</h2>
+     <p>${TEXTS.resetConfirm}</p>
+     <div class="actions">
+       <button class="btn" data-action="confirm-reset">Sim, resetar tudo</button>
+       <button class="btn ghost" data-action="close">Cancelar</button>
+     </div>`,
   )
 }
 
@@ -113,10 +129,41 @@ export function showInventory() {
   )
 }
 
-/** Botão Sair: zerou (inventário completo) ou game over (faltam recortes). */
-export function requestExit() {
-  if (isComplete()) showWin()
-  else showGameOver()
+/* ---------------- Saída da página (fechar/recarregar a aba) ----------------
+  O navegador só permite o aviso NATIVO dele ("Sair do site?"); o texto não pode
+  ser personalizado. Se a pessoa escolher FICAR, o timer abaixo roda logo depois
+  que o aviso fecha e o jogo mostra o Game Over. Se ela sair, a página descarrega
+  e o timer nunca roda. Com o inventário 100% completo, nada é bloqueado.
+*/
+let exitGuardActive = () => false
+
+/** Liga o aviso de saída; `isActive` diz se ele vale agora (ex.: só depois de começar a jogar). */
+export function enableExitGuard(isActive) {
+  exitGuardActive = isActive
+}
+
+addEventListener('beforeunload', (e) => {
+  if (!exitGuardActive() || isComplete()) return
+  e.preventDefault()
+  e.returnValue = '' // navegadores mais antigos exigem returnValue para mostrar o aviso
+  setTimeout(() => {
+    if (!isComplete()) showGameOver()
+  }, 400)
+})
+
+/* ---------------- Contador de visitantes ----------------
+  Aparece embaixo da barra de conhecimento e na tela inicial (elementos com data-visitors).
+*/
+const formatNumber = (n) => n.toLocaleString('pt-BR')
+const renderVisitors = (text) => document.querySelectorAll('[data-visitors]').forEach((el) => (el.textContent = text))
+
+/** Registra a visita e mostra "Visitantes: X únicos · Y visualizações (desde DD/MM/AAAA)". */
+export function initVisitorCounter() {
+  const since = visitorsSinceLabel()
+  renderVisitors(`Visitantes: … (desde ${since})`)
+  loadVisitors()
+    .then(({ unique, views }) => renderVisitors(`Visitantes: ${formatNumber(unique)} únicos · ${formatNumber(views)} visualizações (desde ${since})`))
+    .catch(() => renderVisitors(`Visitantes: indisponível no momento (desde ${since})`))
 }
 
 /* ---------------- Eventos ---------------- */
@@ -133,7 +180,11 @@ ui.content.addEventListener('click', (e) => {
       rewind('start')
       break
     case 'restart-reset':
-      rewind('start', { fresh: true })
+    case 'confirm-reset':
+      rewind('start', { fresh: true }) // apaga o inventário e recomeça do zero
+      break
+    case 'close':
+      ui.close()
       break
     case 'contacts':
       showContacts()
@@ -163,16 +214,8 @@ document.addEventListener('pointerdown', (e) => {
   if (!rewindBox.contains(e.target)) toggleRewindMenu(false)
 })
 $('#btn-inventory').addEventListener('click', showInventory)
-$('#btn-exit').addEventListener('click', requestExit)
+$('#btn-reset').addEventListener('click', showResetConfirm)
 
 // Botões do HUD não devem "roubar" o teclado da bike
 document.querySelectorAll('.hud-actions button').forEach((b) => b.addEventListener('click', () => b.blur()))
 
-// Exit intent (desktop): mouse saindo pelo topo da janela → Game Over / Zerou
-let exitWarned = false
-document.addEventListener('mouseout', (e) => {
-  if (e.relatedTarget || e.clientY > 0 || exitWarned || ui.isOpen) return
-  if (!document.querySelector('#start-screen').classList.contains('hidden')) return
-  exitWarned = true
-  requestExit()
-})

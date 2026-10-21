@@ -19,6 +19,8 @@ export const TEXTS = {
   win: 'Gostou de conhecer a experiência profissional da Marina Micas? Entre em contato pelos canais abaixo para conversarem e compartilharem conhecimentos:',
   gameOver:
     'Você não percorreu todo o caminho, mas não precisa sair de mãos vazias! Deseja tentar novamente para ver o restante da trajetória ou prefere ir direto aos contatos da Marina?',
+  resetConfirm:
+    'Isso apaga todos os recortes conquistados no inventário e recomeça a partida do zero, com todos os recortes de pé de novo. Essa ação não pode ser desfeita.',
   retry:
     'Você pode apagar tudo o que conquistou e recomeçar do zero, ou manter o inventário (e os recortes já destruídos) e apenas voltar ao ponto de partida.',
 }
@@ -127,3 +129,14 @@ export const ZONES = [
 ]
 
 export const AVATAR_IMAGE = 'avatar/bike.webp'
+
+/*
+  Contador de visitantes (serviço gratuito Abacus: https://abacus.jasoncameron.dev).
+  - since:     data de início exibida ("desde DD/MM/AAAA"), no formato AAAA-MM-DD
+  - namespace: nome único deste site no serviço (troque se quiser zerar a contagem)
+*/
+export const VISITORS = {
+  since: '2026-10-21', // data do deploy do contador
+  namespace: 'marinamicas-portfolio',
+  keys: { unique: 'visitantes-unicos', views: 'visualizacoes' },
+}

@@ -24,12 +24,14 @@ com o arquivo exato que você vai abrir, o trecho que deve procurar e como confe
    - 5.7 Mudar as cores
    - 5.8 Ajustar a janela presa no chão
    - 5.9 Inventário e progresso salvo
-   - 5.10 Botão Sair, Game Over e "Tentar novamente"
+   - 5.10 Botão Resetar, Game Over e "Tentar novamente"
    - 5.11 Rebobinar
    - 5.12 Ruas, placas, câmera e limites do mapa
    - 5.13 Velocidade da bike e força para atropelar
    - 5.14 Gestos, zoom e sensibilidade dos controles
    - 5.15 Guia de navegação e gestos inválidos
+   - 5.16 Links externos no visualizador em tela cheia
+   - 5.17 Contador de visitantes
 6. [Testando antes de publicar](#6-testando-antes-de-publicar)
 7. [Publicando no GitHub Pages](#7-publicando-no-github-pages)
 8. [Problemas comuns e soluções](#8-problemas-comuns-e-soluções)
@@ -123,7 +125,8 @@ marina-portfolio/
     │   ├── bike.js         ← a bicicleta (velocidade, curvas, placas magnéticas)
     │   └── environment.js  ← chão, ruas, enfeites, placas, horizonte
     ├── ui/
-    │   ├── screens.js      ← janelas: item, inventário, zerou, game over, tentar novamente
+    │   ├── screens.js      ← janelas: item, inventário, zerou, game over, resetar, contador de visitantes
+    │   ├── viewer.js       ← visualizador em tela cheia para links externos e "Saiba mais"
     │   ├── pins.js         ← janelas presas no chão depois que o recorte é destruído
     │   ├── guide.js        ← guia de navegação (celular x PC) e "não mostrar novamente"
     │   ├── modal.js        ← a janela flutuante (abrir/fechar)
@@ -153,11 +156,14 @@ Entender as regras ajuda a saber onde mexer:
    - rebobina para o início;
    - escolhe "Manter o inventário" ao tentar novamente;
    - recarrega a página (F5) na mesma aba.
-4. **Reset completo só pelo botão Sair**: Sair → Tentar novamente → **Resetar tudo**. Só aí o inventário
+4. **Reset completo pelo botão ↺ Resetar** (pede confirmação) ou por Game Over → Tentar novamente → **Resetar tudo**. Só aí o inventário
    é apagado e os recortes voltam a ficar de pé.
-5. **Janela do Sair**:
-   - se **faltam recortes** → aparece **Game Over** com "Tentar novamente" e "Ir aos contatos";
-   - se **coletou todos** → aparece **Você zerou!** (nunca Game Over), com os contatos e "Jogar de novo".
+5. **Game Over só ao tentar sair da página**: se a pessoa tenta fechar ou recarregar a aba sem 100% do
+   inventário, o navegador mostra o aviso nativo dele ("Sair do site?"). Se ela escolher **ficar**, aparece o
+   **Game Over** com "Continuar jogando", "Tentar novamente" e "Ir aos contatos".
+   - Com o inventário **completo**, nenhum aviso aparece.
+   - O texto do aviso nativo não pode ser mudado (regra dos navegadores).
+   - No celular, principalmente no iPhone, os navegadores muitas vezes não mostram esse aviso.
 6. **Tentar novamente / Jogar de novo** faz uma segunda pergunta:
    - **Manter o inventário** → a bike volta ao ponto de partida e tudo o que foi conquistado continua;
    - **Resetar tudo** → apaga o inventário e remonta todos os recortes.
@@ -406,14 +412,14 @@ Funções principais:
 |---|---|
 | `collect(id)` | Adiciona o recorte ao inventário (só conta uma vez). |
 | `markLink(id)` | Marca que o "Saiba mais" foi aberto (janela grande ou janela do chão). |
-| `resetProgress()` | Apaga tudo. Só é chamada em Sair → Tentar novamente → Resetar tudo. |
+| `resetProgress()` | Apaga tudo. Chamada pelo botão ↺ Resetar (depois da confirmação) ou por "Resetar tudo". |
 
 O contador do botão **Inventário** e a barra **"Conhecimento sobre Marina"** são atualizados sozinhos
 toda vez que o estado muda (função `updateHUD` em `src/ui/screens.js`).
 
 **Testar do zero:** durante o desenvolvimento, para começar sem progresso, use uma destas opções:
 
-- botão **Sair → Tentar novamente → Resetar tudo**; ou
+- botão **↺ Resetar → Sim, resetar tudo**; ou
 - feche a aba e abra de novo; ou
 - no console (F12): `sessionStorage.clear()` e depois F5.
 
@@ -426,17 +432,22 @@ const STORAGE_KEY = 'mmj-portfolio:v1'  // mude para 'mmj-portfolio:v2'
 
 ---
 
-### 5.10 Botão Sair, Game Over e "Tentar novamente"
+### 5.10 Botão Resetar, Game Over e "Tentar novamente"
 
 **Arquivo:** `src/ui/screens.js`.
 
 O caminho completo é:
 
 ```
-Botão "Sair" (ou mouse saindo pelo topo da janela)
-   └── requestExit()
-         ├── coletou tudo?  → showWin()       → "Você zerou!" + contatos + [Jogar de novo]
-         └── faltou algo?   → showGameOver()  → [Tentar novamente] [Ir aos contatos]
+Botão "↺ Resetar"
+   └── showResetConfirm()  → "Resetar o jogo?" [Sim, resetar tudo] [Cancelar]
+         └── Sim → rewind('start', { fresh: true })  (apaga o inventário e remonta os recortes)
+
+Fechar/recarregar a aba (evento "beforeunload")
+   ├── inventário completo → sai sem aviso
+   └── faltam recortes     → aviso nativo do navegador
+         ├── "Sair"  → a página fecha
+         └── "Ficar" → showGameOver() → [Continuar jogando] [Tentar novamente] [Ir aos contatos]
 
 [Tentar novamente] ou [Jogar de novo]
    └── showRetryChoice()
@@ -453,7 +464,9 @@ Botão "Sair" (ou mouse saindo pelo topo da janela)
 switch (el.dataset.action) {
   case 'retry':          showRetryChoice(); break
   case 'restart-keep':   rewind('start'); break
-  case 'restart-reset':  rewind('start', { fresh: true }); break
+  case 'restart-reset':
+  case 'confirm-reset':  rewind('start', { fresh: true }); break
+  case 'close':          ui.close(); break
   ...
 }
 ```
@@ -467,6 +480,11 @@ switch (el.dataset.action) {
      // o que deve acontecer
      break
    ```
+
+**Textos:** o texto da confirmação fica em `TEXTS.resetConfirm` e o do Game Over em `TEXTS.gameOver`
+(`src/data/level.js`).
+
+**Desligar o aviso ao fechar a aba:** em `src/main.js`, apague a linha `enableExitGuard(() => playing)`.
 
 ---
 
@@ -594,6 +612,53 @@ simular a pinça com dois dedos.
 
 ---
 
+### 5.16 Links externos no visualizador em tela cheia
+
+**Arquivo:** `src/ui/viewer.js`.
+
+Todo link para outro site, PDF, e-mail ou telefone é interceptado e aberto por cima do jogo, em tela cheia.
+O jogo fica pausado e, ao fechar (botão **✕ Voltar ao jogo**, tecla **Esc** ou botão **voltar** do celular),
+tudo continua exatamente de onde parou. Nada abre em nova aba.
+
+| Tipo de link | O que aparece |
+|---|---|
+| Site comum (ex.: portfólio no Behance, artigo) | O site dentro de um quadro (iframe) |
+| YouTube / Vimeo | O player de vídeo (o endereço é convertido para a versão "embed") |
+| PDF (ex.: currículo) | O PDF no leitor do navegador; no celular, pelo visualizador do Google (só com o site publicado) |
+| E-mail / telefone | Cartão com o endereço, "Copiar" e "Abrir app de e-mail" / "Ligar" |
+| LinkedIn, GitHub, WhatsApp, Instagram… | Cartão com o link e "Copiar" (esses sites proíbem ser exibidos dentro de outras páginas) |
+
+**Um site novo aparece em branco?** Ele provavelmente proíbe exibição em iframe. Adicione o domínio na lista
+`NO_IFRAME_HOSTS` no topo de `viewer.js` (ex.: `'behance.net'`). A partir daí, ele mostra o cartão com
+"Copiar link" em vez do quadro vazio.
+
+**Quero que um link específico funcione normalmente (sem visualizador):** adicione o atributo
+`data-viewer-skip` no `<a>`.
+
+---
+
+### 5.17 Contador de visitantes
+
+**Arquivos:** `src/core/visitors.js` (comunicação com a API) e `VISITORS` em `src/data/level.js` (configuração).
+
+Aparece embaixo da barra de conhecimento e na tela inicial:
+`Visitantes: X únicos · Y visualizações (desde DD/MM/AAAA)`.
+
+- **Únicos:** soma 1 só na primeira visita de cada aparelho/navegador (marca salva no `localStorage`).
+  Limpar os dados do navegador ou usar outro navegador conta como um visitante novo.
+- **Visualizações:** soma 1 toda vez que o site é aberto ou recarregado, mesmo no mesmo aparelho.
+- **Em desenvolvimento** (`npm run dev`) os números só são lidos, nunca somados.
+- O serviço usado é o **Abacus** (https://abacus.jasoncameron.dev): gratuito, sem cadastro.
+
+**Mudar a data de início:** em `level.js`, troque `since: '2026-10-21'` (formato AAAA-MM-DD).
+
+**Zerar a contagem:** troque o `namespace` (ex.: `'marinamicas-portfolio-2027'`). Os números começam do zero.
+
+**Se o serviço sair do ar:** o texto vira "Visitantes: indisponível no momento" e o jogo continua normal.
+Para trocar de serviço, só a função `call()` em `visitors.js` precisa mudar.
+
+---
+
 ## 6. Testando antes de publicar
 
 Rode o projeto (`npm run dev`) e confira esta lista:
@@ -601,13 +666,16 @@ Rode o projeto (`npm run dev`) e confira esta lista:
 - [ ] A tela inicial abre e o botão "Pedalar ▶" funciona.
 - [ ] Atropelar a Marina mostra o texto de apresentação em 3D.
 - [ ] Atropelar cada recorte: abre a janela, o contador do inventário aumenta 1, e depois aparece a janela no chão.
-- [ ] O "Saiba mais" da janela do chão abre o link numa nova aba e o inventário mostra "🔗 saiba mais visitado".
+- [ ] O "Saiba mais" (janela e janela do chão) abre no visualizador em tela cheia, sem nova aba, e o inventário mostra "🔗 saiba mais visitado".
+- [ ] Os links do topo (LinkedIn, GitHub, e-mail, WhatsApp, currículo) abrem no visualizador; Esc e "voltar" fecham.
 - [ ] Rebobinar para a bifurcação e para o início: os recortes conquistados **continuam destruídos**.
 - [ ] Apertar F5: os recortes conquistados continuam destruídos e o contador continua igual.
-- [ ] Sair com recortes faltando → Game Over → Tentar novamente → aparece a pergunta.
+- [ ] Com recortes faltando, recarregar a página (F5) → aviso do navegador → "Cancelar/Ficar" → Game Over.
+- [ ] Botão ↺ Resetar → confirmação → "Sim, resetar tudo" → inventário volta a 0.
 - [ ] "Manter o inventário" → volta ao início com tudo conquistado.
 - [ ] "Resetar tudo" → contador volta a `0/…` e todos os recortes ficam de pé.
-- [ ] Coletar tudo e clicar em Sair → aparece "Você zerou!" (não Game Over).
+- [ ] Coletar tudo e recarregar a página → nenhum aviso aparece.
+- [ ] O contador "Visitantes: … (desde …)" aparece na tela inicial e embaixo da barra de conhecimento.
 - [ ] Roda do mouse / pinça do trackpad aproxima e afasta a câmera sem dar zoom na página; duplo clique volta ao normal.
 - [ ] Clicar na bike e arrastar: ela acompanha o mouse exatamente e para onde for solta.
 - [ ] Clicar no cenário e arrastar: o mapa acompanha o mouse; a bike não se mexe.
@@ -672,7 +740,7 @@ na lateral) mostra cada arquivo alterado; clique com o botão direito → **Desc
 | A imagem do recorte não aparece | Nome ou pasta diferente do `image` | Confira letra por letra, inclusive a extensão (`.webp` x `.png`). |
 | O contador mostra mais itens do que deveria | `id` repetido em `ITEMS` | Cada `item(...)` precisa de um `id` diferente. |
 | Já atropelei tudo, mas não aparece "Você zerou!" | Algum recorte está fora da rua ou inalcançável | Abra o inventário e veja qual está com "???". Confira o `x`/`z` dele. |
-| Quero testar do zero, mas o progresso continua | O progresso fica salvo na aba | Sair → Tentar novamente → Resetar tudo, ou `sessionStorage.clear()` no console. |
+| Quero testar do zero, mas o progresso continua | O progresso fica salvo na aba | Botão ↺ Resetar, ou `sessionStorage.clear()` no console. |
 | `npm` não é reconhecido | Node.js não instalado ou terminal aberto antes da instalação | Instale o Node e feche/abra o VS Code. |
 | `npm run dev` diz que a porta está em uso | Outro servidor já está rodando | Feche o outro terminal (Ctrl + C) ou use o novo endereço que o Vite mostrar. |
 | O site publicado está desatualizado | O deploy ainda está rodando ou falhou | Veja a aba **Actions** no GitHub. Atualize a página com Ctrl + F5. |

@@ -144,6 +144,38 @@ button, a, .btn { touch-action: manipulation; }
   .guide-card .actions .btn { flex: 1 1 100%; text-align: center; padding: 10px 12px; }
 }
 
+/* ---------- Contador de visitantes ---------- */
+.visitors { display: block; margin-top: 6px; font-size: 11px; font-weight: 600; opacity: .8; }
+.start-card .visitors { margin-top: 10px; color: var(--purple); opacity: 1; }
+
+/* ---------- Visualizador em tela cheia (links externos e "Saiba mais") ---------- */
+.viewer { position: fixed; inset: 0; z-index: 80; display: flex; flex-direction: column; background: var(--black);
+  touch-action: auto; user-select: text; -webkit-user-select: text; }
+.viewer-bar { display: flex; align-items: center; gap: 8px; padding: 8px 10px; padding-top: max(8px, env(safe-area-inset-top));
+  background: var(--purple); color: var(--white); }
+.viewer-title { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.viewer-title strong, .viewer-title small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.viewer-title small { opacity: .8; font-size: 12px; }
+.viewer-btn { flex: none; border: 0; padding: 10px 14px; font: inherit; font-weight: 800; cursor: pointer; background: var(--white); color: var(--black);
+  clip-path: polygon(3% 0, 100% 6%, 97% 100%, 0 92%); touch-action: manipulation; }
+.viewer-btn:hover, .viewer-btn:focus-visible { background: var(--lilac); }
+.viewer-body { position: relative; flex: 1; display: flex; flex-direction: column; min-height: 0; background: var(--white); }
+.viewer-body iframe { flex: 1; width: 100%; border: 0; background: var(--white); }
+.viewer-loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--black); font-weight: 800; pointer-events: none; }
+.viewer-hint { margin: 0; padding: 6px 12px; padding-bottom: max(6px, env(safe-area-inset-bottom)); font-size: 12px; background: var(--ink); color: var(--white); }
+.viewer-link { border: 0; background: none; color: var(--lilac); font: inherit; font-weight: 800; text-decoration: underline; cursor: pointer; }
+.viewer-card { margin: auto; padding: 32px 24px; max-width: 480px; color: var(--black); text-align: center; }
+.viewer-card .actions { justify-content: center; }
+.viewer-card .actions .btn:not(.ghost) { background: var(--purple); color: var(--white); }
+.viewer-card-icon { display: block; font-size: 44px; margin-bottom: 8px; }
+.viewer-card h2 { text-transform: uppercase; margin-bottom: 8px; }
+.viewer-card p { line-height: 1.5; margin-bottom: 12px; }
+.viewer-url { padding: 8px 10px; background: var(--lilac); font-weight: 700; word-break: break-all; }
+@media (max-width: 600px) {
+  .viewer-bar [data-viewer="copy"] { display: none; } /* no celular, "copiar" fica no rodapé/cartão */
+  .viewer-btn { padding: 9px 12px; font-size: 14px; }
+}
+
 #no-webgl { position: fixed; inset: 0; display: grid; place-items: center; padding: 24px; z-index: 50; background: var(--black); text-align: center; line-height: 1.5; }
 
 /* ---------- Efeitos ---------- */

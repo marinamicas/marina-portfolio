@@ -17,7 +17,8 @@ import { bike, clampToBounds, lockBike, syncBike, unlockBike, updateBike } from 
 import { checkHits, shatter, showDestroyed, syncTotems, totems } from './world/totems.js'
 import { ui } from './ui/modal.js'
 import { paperBurst, toast } from './ui/effects.js'
-import { maybeWin, openItem, updateHUD } from './ui/screens.js'
+import { enableExitGuard, initVisitorCounter, maybeWin, openItem, updateHUD } from './ui/screens.js'
+import './ui/viewer.js' // visualizador em tela cheia: intercepta todos os links externos
 import { showPin, updatePins } from './ui/pins.js'
 import './ui/guide.js' // modal guia: escuta os gestos inválidos e o botão ? Ajuda
 
@@ -25,7 +26,7 @@ import './ui/guide.js' // modal guia: escuta os gestos inválidos e o botão ? A
 let playing = false
 
 // Gestos inválidos só contam com o jogo rodando, sem janela aberta e com a bike livre
-setDetectorGuard(() => playing && !ui.isOpen && !bike.locked)
+setDetectorGuard(() => playing && !ui.isBlocked() && !bike.locked)
 
 buildEnvironment()
 
@@ -44,7 +45,11 @@ rig.panBounds = BOUNDS // o pan não leva a câmera para fora do mapa
 let currentZone = null
 
 // Arrastar a bike / arrastar o cenário só valem com o jogo rodando e sem janela aberta
-initPointerControls(rig, () => playing && !ui.isOpen)
+initPointerControls(rig, () => playing && !ui.isBlocked())
+
+// Aviso ao fechar/recarregar a aba sem 100% do inventário (só depois de começar a jogar)
+enableExitGuard(() => playing)
+initVisitorCounter()
 
 function updateZones() {
   const zone = ZONES.find((z) => z.test(bike.body.position)) ?? null
@@ -99,19 +104,21 @@ function hitTotem(totem) {
    Loop: gsap.ticker mantém física, câmera e tweens no mesmo relógio
    ========================================================================== */
 gsap.ticker.add((time, deltaMs) => {
+  // Visualizador de link aberto: o jogo congela exatamente onde estava (e economiza bateria)
+  if (ui.viewerOpen) return
   const dt = Math.min(deltaMs / 1000, 1 / 20) // tempo real do frame (câmera e interface)
   const simDt = dt * sim.timeScale // tempo da simulação (fica lento no atropelo)
 
   // Ponteiro primeiro: o arraste define para onde a bike vai neste frame
   updatePointerControls(dt)
-  readInput(ui.isOpen || bike.locked)
+  readInput(ui.isBlocked() || bike.locked)
   updateBike(input, bike.dragging ? dt : simDt) // o arraste segue o dedo em tempo real
   world.step(1 / 60, simDt, 3)
   clampToBounds()
   syncProps()
   syncTotems(time)
 
-  if (!bike.locked && !ui.isOpen) {
+  if (!bike.locked && !ui.isBlocked()) {
     const hit = checkHits()
     if (hit) hitTotem(hit)
   } else {
@@ -125,7 +132,7 @@ gsap.ticker.add((time, deltaMs) => {
 
   // Zoom acumulado pelos gestos desde o último frame (sempre consumido, para não "vazar" depois)
   const zoom = consumeZoom()
-  if (playing && !ui.isOpen) {
+  if (playing && !ui.isBlocked()) {
     if (zoom.reset) {
       rig.resetZoom()
       rig.recenter()

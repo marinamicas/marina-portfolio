@@ -116,7 +116,8 @@ src/
 │   ├── modal.js         # janela flutuante
 │   ├── guide.js         # guia de navegação (touch/PC) + "não mostrar novamente"
 │   ├── pins.js          # janelas "saiba mais" presas no chão
-│   ├── screens.js       # HUD, item, inventário, zerou, game over, botões
+│   ├── screens.js       # HUD, item, inventário, zerou, game over, resetar, aviso de saída, contador
+│   ├── viewer.js        # visualizador em tela cheia para links externos (iframe)
 │   └── effects.js       # toast e partículas triangulares na tela
 └── utils/               # texturas em canvas, carregamento de recortes, helpers
 ```
@@ -126,8 +127,10 @@ src/
 - **Progresso:** cada recorte atropelado conta uma vez e fica em `sessionStorage`, válido enquanto a aba estiver aberta.
 - **Estado final mantido:** recortes conquistados continuam destruídos, com a janela "saiba mais" presa no chão, ao rebobinar (bifurcação ou início) e ao recarregar a página.
 - **Rebobinar:** pode voltar para a bifurcação das placas ou para o início. Os objetos soltos do cenário voltam ao lugar; o inventário é mantido.
-- **Reset completo:** só por **Sair → Tentar novamente → Resetar tudo**. A opção **Manter o inventário** apenas leva a bike ao ponto de partida.
+- **Reset completo:** botão **↺ Resetar** (com confirmação), ou **Tentar novamente → Resetar tudo** no Game Over. A opção **Manter o inventário** apenas leva a bike ao ponto de partida.
 - **Placas magnéticas:** ao passar perto de uma placa sem virar, a bike é puxada suavemente para a rua que ela indica.
 - **Inventário:** mostra os recortes conquistados e se o link "saiba mais" de cada um foi aberto. Clicar num recorte leva a bike até ele, com opção de voltar ao ponto anterior.
-- **Game Over:** aparece pelo botão **Sair** ou quando o mouse sai pelo topo da janela, se ainda faltarem recortes. Nenhum navegador permite mostrar uma janela própria quando a aba é fechada, por isso foi usada essa abordagem.
+- **Game Over:** só quando a pessoa tenta **fechar ou recarregar a aba** sem 100% do inventário. O navegador mostra o aviso nativo dele ("Sair do site?", texto não personalizável); se ela escolher ficar, o jogo mostra o Game Over. Com o inventário completo, nada é bloqueado. Celulares (principalmente iPhone) nem sempre disparam esse aviso.
+- **Links externos:** todos (topo, "Saiba mais", currículo) abrem num visualizador em tela cheia dentro do jogo, sem nova aba. Sites que proíbem exibição em iframe (LinkedIn, GitHub, WhatsApp…) mostram um cartão com "Copiar link".
+- **Contador de visitantes:** "Visitantes: X únicos · Y visualizações (desde DD/MM/AAAA)", via API gratuita [Abacus](https://abacus.jasoncameron.dev). Únicos = 1 por aparelho (marcado no `localStorage`); visualizações = toda abertura do site. Configuração em `VISITORS` (`src/data/level.js`).
 - **Zerou:** aparece automaticamente quando o último recorte é atropelado, e no lugar do Game Over quando o inventário está completo.

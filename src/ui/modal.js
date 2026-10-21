@@ -9,6 +9,12 @@ export const ui = {
   content,
   isOpen: false,
   onClose: null,
+  viewerOpen: false, // visualizador em tela cheia (links externos) aberto por cima de tudo
+
+  /** true quando alguma camada (janela ou visualizador) cobre o jogo: a bike e os gestos ficam pausados. */
+  isBlocked() {
+    return this.isOpen || this.viewerOpen
+  },
 
   open(html, { onClose = null, className = '' } = {}) {
     content.innerHTML = html

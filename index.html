@@ -19,19 +19,19 @@
   <!-- HUD: header fixo com recortes de contato -->
   <header class="hud-header">
     <nav class="hud-links" aria-label="Contatos">
-      <a href="https://www.linkedin.com/in/SEU-PERFIL" target="_blank" rel="noopener" aria-label="LinkedIn">
+      <a href="https://www.linkedin.com/in/SEU-PERFIL" aria-label="LinkedIn">
         <img src="/src/assets/ui/icons/linkedin.svg" alt="" /><span>LinkedIn</span>
       </a>
-      <a href="https://github.com/SEU-USUARIO" target="_blank" rel="noopener" aria-label="GitHub">
+      <a href="https://github.com/SEU-USUARIO" aria-label="GitHub">
         <img src="/src/assets/ui/icons/github.svg" alt="" /><span>GitHub</span>
       </a>
       <a href="mailto:seu-email@exemplo.com" aria-label="E-mail">
         <img src="/src/assets/ui/icons/email.svg" alt="" /><span>E-mail</span>
       </a>
-      <a href="https://wa.me/55DDDNUMERO" target="_blank" rel="noopener" aria-label="WhatsApp">
+      <a href="https://wa.me/55DDDNUMERO" aria-label="WhatsApp">
         <img src="/src/assets/ui/icons/whatsapp.svg" alt="" /><span>WhatsApp</span>
       </a>
-      <a href="./docs/curriculo-marina-micas.pdf" target="_blank" rel="noopener" aria-label="Currículo em PDF">
+      <a href="./docs/curriculo-marina-micas.pdf" aria-label="Currículo em PDF">
         <img src="/src/assets/ui/icons/cv.svg" alt="" /><span>Currículo (PDF)</span>
       </a>
     </nav>
@@ -40,6 +40,7 @@
   <div class="hud-progress" aria-live="polite">
     <span id="progress-label">Conhecimento sobre Marina: 0%</span>
     <div class="bar"><div id="progress-fill"></div></div>
+    <small class="visitors" data-visitors></small>
   </div>
 
   <div class="hud-actions">
@@ -52,7 +53,7 @@
     </div>
     <button id="btn-inventory">✂ Inventário <span id="inventory-count">0/0</span></button>
     <button id="btn-help" aria-label="Como navegar">? Ajuda</button>
-    <button id="btn-exit">Sair</button>
+    <button id="btn-reset">↺ Resetar</button>
   </div>
 
   <div id="toast" role="status"></div>
@@ -71,6 +72,7 @@
       <h1>Marina Micas<br />Jardim</h1>
       <p>Arte + tecnologia. Leve a bike pelas ruas de Experiências e Formações e atropele os recortes para desvendar a trajetória.</p>
       <button id="btn-start" class="btn" disabled>Recortando papéis…</button>
+      <small class="visitors" data-visitors></small>
       <!-- Dica de controles: o CSS mostra só a versão do tipo de tela do visitante -->
       <small class="only-desktop">Clique na bike e arraste até os recortes · arraste o cenário para olhar em volta · roda do mouse para zoom</small>
       <small class="only-touch">Toque na bike e arraste até os recortes · arraste o cenário para olhar em volta · pinça para zoom</small>
