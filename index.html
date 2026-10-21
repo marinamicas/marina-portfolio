@@ -20,7 +20,8 @@
   - Textos de SEO → bloco "SEO" no <head>. Mantenha o endereço do site igual em
     canonical, og:url, twitter e no JSON-LD (procure por SITE_URL nos comentários).
   - Favicon → troque public/favicon.svg e public/apple-touch-icon.png (ver README).
-  - Imagem de prévia ao compartilhar → public/og-image.png (1200×630).
+  - Imagem de prévia ao compartilhar → public/og-image.jpg (1200×630, até ~300 KB).
+  - Arquivos de public/ ficam na RAIZ do site: public/docs/x.pdf vira ./docs/x.pdf (nunca use "/public/" em links).
   ============================================================================
 -->
 <html lang="pt-BR">
@@ -51,21 +52,27 @@
   <meta property="og:title" content="Marina Micas Jardim — Portfólio gamificado" />
   <meta property="og:description" content="Pedale pela trajetória de Marina Micas: UX/UI Design, Dados, Arte e Tecnologia em uma colagem digital 3D interativa." />
   <meta property="og:url" content="https://marinamicas.github.io/marina-portfolio/" />
-  <!-- Imagem de prévia: public/og-image.png (1200×630 px, menos de 1 MB). Troque o arquivo mantendo o nome -->
-  <meta property="og:image" content="https://marinamicas.github.io/marina-portfolio/public/og-image.png" />
-  <meta property="og:image:secure_url" content="https://marinamicas.github.io/marina-portfolio/public/og-image.png" />
-  <meta property="og:image:type" content="image/png" />
+  <!--
+    Imagem de prévia: arquivo public/og-image.jpg (1200×630 px).
+    ATENÇÃO 1: no endereço NÃO entra "/public/". O Vite copia o CONTEÚDO de public/ para a raiz do site,
+    então public/og-image.jpg vira https://…/marina-portfolio/og-image.jpg.
+    ATENÇÃO 2: mantenha o arquivo abaixo de ~300 KB (JPEG qualidade 80-85). O WhatsApp ignora prévias pesadas.
+    Troque o arquivo mantendo o nome; se mudar nome ou formato, atualize og:image, og:image:type, twitter:image e o JSON-LD.
+  -->
+  <meta property="og:image" content="https://marinamicas.github.io/marina-portfolio/og-image.jpg" />
+  <meta property="og:image:secure_url" content="https://marinamicas.github.io/marina-portfolio/og-image.jpg" />
+  <meta property="og:image:type" content="image/jpeg" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="Colagem digital roxa e lilás do portfólio gamificado de Marina Micas Jardim" />
+  <meta property="og:image:alt" content="Foto de Marina Micas Jardim sorrindo ao lado do título Portfólio gamificado, em fundo lilás" />
 
   <!-- ===================== Twitter / X Cards ===================== -->
   <!-- summary_large_image = cartão com imagem grande em cima do título -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Marina Micas Jardim — Portfólio gamificado" />
   <meta name="twitter:description" content="Pedale pela trajetória de Marina Micas: UX/UI Design, Dados, Arte e Tecnologia em uma colagem digital 3D interativa." />
-  <meta name="twitter:image" content="https://marinamicas.github.io/marina-portfolio/public/og-image.png" />
-  <meta name="twitter:image:alt" content="Colagem digital roxa e lilás do portfólio gamificado de Marina Micas Jardim" />
+  <meta name="twitter:image" content="https://marinamicas.github.io/marina-portfolio/og-image.jpg" />
+  <meta name="twitter:image:alt" content="Foto de Marina Micas Jardim sorrindo ao lado do título Portfólio gamificado, em fundo lilás" />
 
   <!-- ===================== Favicon e cor do tema ===================== -->
   <!-- SVG: nítido em qualquer tamanho (navegadores modernos). PNG 180×180: ícone ao "adicionar à tela inicial" no iPhone/iPad -->
@@ -93,7 +100,7 @@
         "jobTitle": "UX/UI Developer",
         "description": "UX/UI Designer com cerca de 6 anos de experiência e formação em informática, em busca de novos desafios no universo de dados (engenharia, ciência e análise), unindo arte com tecnologia.",
         "url": "https://marinamicas.github.io/marina-portfolio/",
-        "image": "https://marinamicas.github.io/marina-portfolio/og-image.png",
+        "image": "https://marinamicas.github.io/marina-portfolio/og-image.jpg",
         "knowsAbout": ["UX Design", "UX/UI Developer", "UI Design", "Product Design", "Ciência de Dados", "Engenharia de Dados", "Análise de Dados", "Arte e Tecnologia"],
         "knowsLanguage": "pt-BR",
         "sameAs": [
@@ -109,8 +116,8 @@
         "description": "Portfólio interativo em 3D: o visitante pedala uma bicicleta de papel por uma colagem digital e atropela recortes para descobrir as experiências e formações de Marina Micas Jardim.",
         "url": "https://marinamicas.github.io/marina-portfolio/",
         "mainEntityOfPage": "https://marinamicas.github.io/marina-portfolio/",
-        "image": "https://marinamicas.github.io/marina-portfolio/public/og-image.png",
-        "thumbnailUrl": "https://marinamicas.github.io/marina-portfolio/public/og-image.png",
+        "image": "https://marinamicas.github.io/marina-portfolio/og-image.jpg",
+        "thumbnailUrl": "https://marinamicas.github.io/marina-portfolio/og-image.jpg",
         "inLanguage": "pt-BR",
         "genre": ["Portfólio interativo", "Jogo para navegador", "Colagem digital"],
         "keywords": "portfólio gamificado, UX/UI Design, dados, arte e tecnologia, Three.js, WebGL",
@@ -166,7 +173,9 @@
       <a href="https://wa.me/5521985487666" aria-label="WhatsApp">
         <img src="/src/assets/ui/icons/whatsapp.png" alt="" /><span>WhatsApp</span>
       </a>
-      <!-- Currículo: coloque o PDF em public/docs/curriculo-marina-micas.pdf -->
+      <!-- Currículo: o PDF PRECISA estar em public/docs/curriculo-marina-micas.pdf.
+           Só a pasta public/ vai para o site publicado; um PDF na pasta docs/ da raiz funciona no
+           npm run dev, mas dá erro 404 no GitHub Pages. -->
       <a href="./docs/curriculo-marina-micas.pdf" aria-label="Currículo em PDF" target="_blank">
         <img src="/src/assets/ui/icons/curriculo.png" alt="" /><span>Currículo (PDF)</span>
       </a>

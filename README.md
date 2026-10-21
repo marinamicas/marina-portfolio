@@ -185,14 +185,16 @@ Cada recorte é criado por uma chamada `item(...)`. A função monta um objeto c
 | Ativo | Onde colocar | Observações |
 |---|---|---|
 | **Foto de perfil** (miniatura, céu e janela "Sobre") | `src/assets/images/profile.jpeg` | Nome configurado em `PROFILE.image` (`level.js`). Aceita jpg, jpeg, png, webp ou avif. Até 1600 px no maior lado. |
-| **Imagem de prévia ao compartilhar** (WhatsApp/LinkedIn) | `public/og-image.png` | 1200×630 px, menos de 1 MB. A atual é um placeholder gerado; troque por uma captura de tela bonita do jogo ou uma arte própria. |
+| **Imagem de prévia ao compartilhar** (WhatsApp/LinkedIn) | `public/og-image.jpg` | 1200×630 px, JPEG com **até ~300 KB** (o WhatsApp ignora imagens pesadas). Na tag `og:image` o endereço é `https://…/marina-portfolio/og-image.jpg`, **sem** `/public/`. |
 | **Favicon** | `public/favicon.svg` + `public/apple-touch-icon.png` | Veja [4.1](#41-como-alterar-o-favicon). |
 | **Ícones do topo** (LinkedIn, GitHub, e-mail, WhatsApp, CV) | `src/assets/ui/icons/*.svg` | Substitua mantendo o nome. Para um ícone novo, copie um `<a>` em `index.html` (`<nav class="hud-links">`). |
 | **Bicicleta + avatar** | `src/assets/cutouts/avatar/bike.webp` | Virada para a **direita**, rodas encostando na base, fundo transparente. |
 | **Recorte da Marina** (apresentação) | `src/assets/cutouts/intro/marina.webp` | Fundo transparente. |
 | **Placas** | `src/assets/cutouts/signs/*.webp` | `experiencias`, `formacoes`, `desenvolvimento`, `design`, `diversidade`. |
 | **Experiências / Formações** | `src/assets/cutouts/experiencias/{desenvolvimento,design,diversidade}/*.webp`, `src/assets/cutouts/formacoes/*.webp` | O nome deve ser idêntico ao campo `image` do item. |
-| **Currículo em PDF** | `public/docs/curriculo-marina-micas.pdf` | Nome exato; o botão "CV" do topo aponta para ele. |
+| **Currículo em PDF** | `public/docs/curriculo-marina-micas.pdf` | Nome exato; o botão "CV" do topo aponta para ele. **Tem que ser dentro de `public/`**: a pasta `docs/` da raiz funciona no `npm run dev`, mas não vai para o site publicado. |
+
+> **Regra da pasta `public/`:** o Vite copia o *conteúdo* de `public/` para a raiz do site publicado. Então `public/docs/x.pdf` vira `https://…/marina-portfolio/docs/x.pdf` e, no HTML, o link é `./docs/x.pdf`. Nunca escreva `/public/` em um endereço. Arquivos fora de `public/` (e que não são importados pelo código) não entram no site.
 
 **Dicas para os recortes:** PNG/WebP com fundo transparente, no máximo 2048 px no maior lado. O contorno transparente é o que vira os pedaços de papel na explosão. Enquanto um arquivo não existir, o jogo gera um recorte provisório automaticamente.
 
@@ -231,7 +233,7 @@ A foto aparece em três lugares: miniatura no canto superior esquerdo, fundo sut
 Tudo fica no `<head>` do [`index.html`](index.html), em blocos comentados:
 
 - **Título e descrição** (`<title>`, `meta description`, `keywords`, `author`): o que o Google mostra. Título até ~60 caracteres úteis; descrição entre 120 e 160.
-- **Open Graph** (`og:*`) e **Twitter Cards** (`twitter:*`): montam o cartão de prévia no WhatsApp, LinkedIn, Facebook, Telegram e X. A imagem é `public/og-image.png` (1200×630) e **precisa de endereço completo** (`https://…`).
+- **Open Graph** (`og:*`) e **Twitter Cards** (`twitter:*`): montam o cartão de prévia no WhatsApp, LinkedIn, Facebook, Telegram e X. A imagem é `public/og-image.jpg` (1200×630) e **precisa de endereço completo** (`https://…`).
 - **JSON-LD** (`<script type="application/ld+json">`): dados estruturados `Person` (quem é a Marina) e `CreativeWork` (o que é o portfólio). Troque os endereços de `sameAs` pelos perfis reais e atualize `dateModified` quando fizer mudanças grandes.
 - **Favicon e `theme-color`**: veja [4.1](#41-como-alterar-o-favicon).
 - `public/robots.txt` e `public/sitemap.xml`: permitem a indexação e apontam o endereço da página.
@@ -268,7 +270,7 @@ Acompanhe na aba **Actions** do repositório. Na primeira vez: **Settings → Pa
 1. Em `index.html`, troque os links do header: `SEU-PERFIL` (LinkedIn), `seu-email@exemplo.com` e `55DDDNUMERO` (WhatsApp). Troque também em `sameAs` do JSON-LD e no bloco `<noscript>`.
 2. Coloque o currículo em `public/docs/curriculo-marina-micas.pdf`.
 3. Confira a foto de perfil em `src/assets/images/profile.jpeg` e a calibração dos olhos ([4.3](#43-como-alterar-imagens-e-ativos)).
-4. Troque `public/og-image.png` por uma prévia real.
+4. Se trocar `public/og-image.jpg`, mantenha 1200×630 e até ~300 KB.
 5. Troque os `https://example.com` dos links em `src/data/level.js`.
 
 ---
@@ -283,7 +285,7 @@ marina-portfolio/
 ├── public/                  # copiados sem alteração para o site
 │   ├── favicon.svg          # ícone da aba
 │   ├── apple-touch-icon.png # ícone 180×180 (iPhone/iPad)
-│   ├── og-image.png         # prévia 1200×630 ao compartilhar (troque pela sua)
+│   ├── og-image.jpg         # prévia 1200×630 ao compartilhar (troque pela sua)
 │   ├── robots.txt, sitemap.xml
 │   └── docs/                # currículo em PDF
 ├── docs/MANUAL-DE-ATUALIZACAO.md  # manual passo a passo para iniciantes

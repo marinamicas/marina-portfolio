@@ -107,7 +107,7 @@ marina-portfolio/
 ├── public/                 ← arquivos copiados sem alteração
 │   ├── favicon.svg         ← ícone da aba
 │   ├── apple-touch-icon.png ← ícone 180×180 para iPhone/iPad
-│   ├── og-image.png        ← imagem de prévia ao compartilhar o link (1200×630)
+│   ├── og-image.jpg        ← imagem de prévia ao compartilhar o link (1200×630)
 │   ├── robots.txt, sitemap.xml ← ajudam o Google a indexar
 │   └── docs/               ← coloque aqui o currículo em PDF
 ├── docs/                   ← este manual
@@ -741,7 +741,7 @@ Tudo fica no `<head>` do `index.html`, em blocos comentados. Veja o passo a pass
 Resumo:
 
 - **Título/descrição** que o Google mostra: `<title>` e `<meta name="description">`.
-- **Prévia no WhatsApp/LinkedIn:** tags `og:*` e `twitter:*` + a imagem `public/og-image.png` (1200×630).
+- **Prévia no WhatsApp/LinkedIn:** tags `og:*` e `twitter:*` + a imagem `public/og-image.jpg` (1200×630).
   Troque a imagem mantendo o nome. Teste em https://www.opengraph.xyz.
 - **Favicon:** troque `public/favicon.svg` e `public/apple-touch-icon.png` mantendo os nomes.
 - **Endereço do site mudou?** Procure `https://marinamicas.github.io/marina-portfolio/` em `index.html`,
