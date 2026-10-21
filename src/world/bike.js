@@ -7,11 +7,17 @@ import { angleDelta, clamp } from '../utils/helpers.js'
 import { applyCutout, makeBikeTexture } from '../utils/textures.js'
 import { signs } from './environment.js'
 
+/*
+  Bicicleta do jogador: recorte 2D que sempre encara a câmera + caixa física
+  invisível. A velocidade é controlada direto pelo código (estilo arcade).
+*/
+
 const BIKE_Y = 0.6 // meia altura da caixa de colisão
 const SIZE = 2.4
 
 const spriteMaterial = new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.4, side: THREE.DoubleSide })
 
+// Estado público da bike (lido por câmera, inventário, rebobinar…)
 export const bike = {
   body: new CANNON.Body({
     mass: 5,
@@ -39,6 +45,7 @@ applyCutout(spriteMaterial, AVATAR_IMAGE, makeBikeTexture, (tex) => {
 world.addBody(bike.body)
 bike.sprite.position.y = 0.4
 
+// Sombra redonda simples embaixo da bike (mais leve que sombras reais)
 const blobShadow = new THREE.Mesh(
   new THREE.CircleGeometry(0.9, 24),
   new THREE.MeshBasicMaterial({ color: '#000', transparent: true, opacity: 0.35, depthWrite: false }),
@@ -49,6 +56,7 @@ bike.group.add(bike.sprite, blobShadow)
 scene.add(bike.group)
 billboards.push(bike.sprite)
 
+/** Trava a bike (intro, rebobinar, viagens): sem física nem controle do jogador. */
 export function lockBike() {
   bike.locked = true
   bike.speed = 0
@@ -57,6 +65,7 @@ export function lockBike() {
   bike.body.velocity.setZero()
 }
 
+/** Devolve o controle da bike ao jogador. */
 export function unlockBike() {
   bike.body.type = CANNON.Body.DYNAMIC
   bike.body.collisionResponse = true
@@ -64,11 +73,13 @@ export function unlockBike() {
   bike.locked = false
 }
 
+/** Teletransporta a bike para (x, z) com a direção `heading`. */
 export function placeBike(x, z, heading = bike.heading) {
   bike.body.position.set(x, BIKE_Y, z)
   bike.heading = heading
 }
 
+/** Aplica o input do jogador: acelera, vira e sofre a atração das placas magnéticas. */
 export function updateBike(input, dt) {
   if (bike.locked) return
   const max = input.boost ? 17 : 10
@@ -101,12 +112,14 @@ export function updateBike(input, dt) {
   bike.body.velocity.z = -Math.cos(bike.heading) * bike.speed
 }
 
+/** Impede a bike de sair dos limites do mapa (BOUNDS em level.js). */
 export function clampToBounds() {
   const p = bike.body.position
   p.x = clamp(p.x, BOUNDS.minX, BOUNDS.maxX)
   p.z = clamp(p.z, BOUNDS.minZ, BOUNDS.maxZ)
 }
 
+/** Copia a física para o desenho da bike e vira o recorte para o lado em que ela anda. */
 export function syncBike(dt, camYaw, time) {
   bike.group.position.copy(bike.body.position)
   // vira o recorte (efeito papel girando) conforme a direção na tela

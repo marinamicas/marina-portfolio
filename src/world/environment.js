@@ -6,11 +6,17 @@ import { PALETTE, ROADS, ROAD_WIDTH, SIGNS, TEXTS } from '../data/level.js'
 import { rand, nearRoad } from '../utils/helpers.js'
 import { applyCutout, makeCutoutTexture, makePaperTexture, makeTextPlane } from '../utils/textures.js'
 
+/*
+  Cenário: chão de papel, ruas, triângulos de colagem, prismas empurráveis,
+  placas magnéticas e o horizonte com a frase final.
+*/
+
 export const decor = [] // triângulos flutuantes (só visuais)
 export const props = [] // prismas triangulares empurráveis (com física)
 export const signs = [] // placas magnéticas
 export const horizon = new THREE.Group() // nuvem + frase final
 
+// Chão de papel + ruas (um plano por segmento) com faixa central em pedaços de fita
 function buildGround() {
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(700, 700), new THREE.MeshStandardMaterial({ map: makePaperTexture('#17111f', 40) }))
   ground.rotation.x = -Math.PI / 2
@@ -41,6 +47,7 @@ function buildGround() {
   })
 }
 
+// Triângulos flutuantes decorativos (sem física), longe das ruas para não atrapalhar
 function buildDecor() {
   const triGeo = new THREE.BufferGeometry().setFromPoints([
     new THREE.Vector3(0, 1, 0),
@@ -81,6 +88,7 @@ function buildDecor() {
   }
 }
 
+// Prismas triangulares com física: a bike pode empurrá-los
 function buildProps() {
   const mats = [PALETTE.white, PALETTE.purple, PALETTE.black].map((color) => new THREE.MeshStandardMaterial({ color, flatShading: true }))
   let placed = 0
@@ -110,6 +118,7 @@ function buildProps() {
   }
 }
 
+// Placas com poste, ímã e recorte; cada uma tem um corpo físico estático (o poste)
 function buildSigns() {
   const postMat = new THREE.MeshStandardMaterial({ color: PALETTE.black })
   const magnetMat = new THREE.MeshStandardMaterial({ color: PALETTE.purple, emissive: PALETTE.purple, emissiveIntensity: 0.6 })
@@ -135,6 +144,7 @@ function buildSigns() {
   }
 }
 
+// Linha do horizonte, nuvem de triângulos e a frase final no fim das ruas
 function buildHorizon() {
   const line = new THREE.Mesh(new THREE.PlaneGeometry(500, 0.25), new THREE.MeshBasicMaterial({ color: PALETTE.white, fog: false }))
   line.rotation.x = -Math.PI / 2
@@ -158,6 +168,7 @@ function buildHorizon() {
   scene.add(horizon)
 }
 
+/** Monta todo o cenário (chamado uma vez ao iniciar). */
 export function buildEnvironment() {
   buildGround()
   buildDecor()
@@ -166,6 +177,7 @@ export function buildEnvironment() {
   buildHorizon()
 }
 
+/** Copia posição/rotação da física para os prismas visíveis (a cada frame). */
 export function syncProps() {
   for (const p of props) {
     p.mesh.position.copy(p.body.position)
@@ -173,6 +185,7 @@ export function syncProps() {
   }
 }
 
+/** Animações leves do cenário a cada frame: horizonte, enfeites e placas. */
 export function animateEnvironment(time, dt, bikePos) {
   horizon.position.x = THREE.MathUtils.damp(horizon.position.x, bikePos.x, 1.5, dt)
   horizon.position.y = 13 + Math.sin(time * 0.4) * 0.6

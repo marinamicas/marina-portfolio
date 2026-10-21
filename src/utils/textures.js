@@ -47,6 +47,7 @@ export function applyCutout(material, path, makeFallback, onLoad) {
   )
 }
 
+// Converte um <canvas> desenhado em textura do Three.js (com cores corretas)
 export function toTexture(source) {
   const tex = new THREE.CanvasTexture(source)
   tex.colorSpace = THREE.SRGBColorSpace
@@ -54,6 +55,7 @@ export function toTexture(source) {
   return tex
 }
 
+// Quebra um texto em linhas que caibam na largura máxima (em pixels do canvas)
 export function wrapText(ctx, text, maxWidth) {
   const lines = []
   let line = ''
@@ -80,6 +82,7 @@ export function jaggedPath(ctx, x, y, w, h, jitter = 8, step = 40) {
   ctx.closePath()
 }
 
+// Recorte provisório (enquanto a imagem real não existe): papel colorido com título
 export function makeCutoutTexture({ title, subtitle = '', color = PALETTE.purple, width = 512, height = 680 }) {
   const c = document.createElement('canvas')
   c.width = width
@@ -149,6 +152,7 @@ export function makeCutoutTexture({ title, subtitle = '', color = PALETTE.purple
   return toTexture(c)
 }
 
+// Textura de papel com granulado e triângulos sutis (chão e ruas); `repeat` = quantas vezes repete
 export function makePaperTexture(base, repeat = 1) {
   const c = document.createElement('canvas')
   c.width = c.height = 256
@@ -173,6 +177,7 @@ export function makePaperTexture(base, repeat = 1) {
   return tex
 }
 
+// Plano 3D com texto (usado na apresentação da Marina e na frase do horizonte)
 export function makeTextPlane(text, { width = 8, fontSize = 34, canvasWidth = 1024, color = PALETTE.white, bg = null } = {}) {
   const c = document.createElement('canvas')
   const ctx = c.getContext('2d')

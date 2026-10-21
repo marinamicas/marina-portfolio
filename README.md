@@ -26,7 +26,12 @@ Em modo dev, `window.__game` expõe `scene`, `world`, `rig`, `bike`, `totems` e 
 | Pedalar / ré | W / S ou ↑ / ↓ | arrastar para cima / baixo |
 | Virar | A / D ou ← / → | arrastar para os lados |
 | Acelerar | Shift | — |
+| Zoom | roda do mouse, pinça no trackpad ou + / − | pinça com dois dedos |
+| Zoom normal | duplo clique ou 0 | toque duplo |
+| Guia de navegação | botão **? Ajuda** | botão **? Ajuda** |
 | Fechar janela | Esc | botão × |
+
+Gestos não suportados (cliques/toques soltos repetidos, botão direito, três dedos, segurar o dedo parado, deslizar para os lados, teclas sem função) abrem um **guia de navegação** adaptado ao aparelho (touch ou PC). O visitante pode marcar **"Não mostrar esta dica novamente"**, e a escolha fica salva no `localStorage`.
 
 ## Onde editar o conteúdo
 
@@ -95,7 +100,9 @@ src/
 │   ├── stage.js         # renderer, cena, câmera, luzes
 │   ├── physics.js       # mundo cannon-es + materiais de contato
 │   ├── CameraRig.js     # câmera que segue a bike; API pronta para GSAP (frame, cinematic, shake)
-│   ├── input.js         # teclado + joystick por arraste
+│   ├── input.js         # teclado, joystick por arraste, pinça, roda do mouse/trackpad (zoom)
+│   ├── device.js        # detecta touch (celular/tablet) x mouse/teclado (PC)
+│   ├── invalidGestures.js # detector de gestos não suportados
 │   ├── state.js         # progresso no sessionStorage (sem banco de dados)
 │   └── timeMachine.js   # gravação da trajetória, rebobinar, viagens do inventário
 ├── world/
@@ -104,6 +111,8 @@ src/
 │   └── totems.js        # recortes colecionáveis + destruição em pedaços de papel
 ├── ui/
 │   ├── modal.js         # janela flutuante
+│   ├── guide.js         # guia de navegação (touch/PC) + "não mostrar novamente"
+│   ├── pins.js          # janelas "saiba mais" presas no chão
 │   ├── screens.js       # HUD, item, inventário, zerou, game over, botões
 │   └── effects.js       # toast e partículas triangulares na tela
 └── utils/               # texturas em canvas, carregamento de recortes, helpers

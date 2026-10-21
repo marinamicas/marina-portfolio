@@ -2,7 +2,11 @@ import gsap from 'gsap'
 import { PALETTE } from '../data/level.js'
 import { rand, REDUCED_MOTION } from '../utils/helpers.js'
 
+/* Efeitos visuais em HTML por cima do 3D: avisos rápidos e papeizinhos voando. */
+
+// Linha do tempo do aviso atual: um aviso novo cancela o anterior
 let toastTl = null
+/** Mostra um aviso roxo embaixo da tela por `seconds` segundos. */
 export function toast(message, seconds = 3.5) {
   const el = document.querySelector('#toast')
   el.textContent = message

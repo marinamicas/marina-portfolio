@@ -6,6 +6,12 @@ import { ui } from './modal.js'
 import { linksHTML } from './pins.js'
 import { escapeHTML } from '../utils/helpers.js'
 
+/*
+  Telas e HUD: barra de conhecimento, contador do inventário, janelas de
+  item, inventário, zerou, game over, contatos e "tentar novamente".
+*/
+
+// Atalho para document.querySelector
 const $ = (s) => document.querySelector(s)
 
 /* ---------------- HUD ---------------- */
@@ -27,8 +33,10 @@ export function updateHUD() {
 onStateChange(updateHUD)
 
 /* ---------------- Janelas ---------------- */
+// Reaproveita os contatos do topo da página dentro das janelas
 const contactsHTML = () => `<div class="contact-list">${$('.hud-links').innerHTML}</div>`
 
+/** Janela de um recorte atropelado: categoria, título, texto e links "saiba mais". */
 export function openItem(item) {
   ui.open(
     `<p class="tag">${GROUPS[item.group].label}</p>
@@ -67,6 +75,7 @@ export function showRetryChoice() {
   )
 }
 
+/** Sair com recortes faltando. */
 export function showGameOver() {
   ui.open(
     `<p class="tag">${Math.round(progress() * 100)}% da trajetória</p>
@@ -80,10 +89,12 @@ export function showGameOver() {
   )
 }
 
+/** Janela só com os contatos. */
 export function showContacts() {
   ui.open(`<h2>Contatos</h2><p>Vamos conversar e compartilhar conhecimentos?</p>${contactsHTML()}`)
 }
 
+/** Lista de recortes: conquistados (clicáveis para viajar) e bloqueados. */
 export function showInventory() {
   const rows = ITEMS.map((it) => {
     const got = state.collected.includes(it.id)
@@ -102,6 +113,7 @@ export function showInventory() {
   )
 }
 
+/** Botão Sair: zerou (inventário completo) ou game over (faltam recortes). */
 export function requestExit() {
   if (isComplete()) showWin()
   else showGameOver()
@@ -132,6 +144,7 @@ ui.content.addEventListener('click', (e) => {
   }
 })
 
+// Menu do botão Rebobinar (abre/fecha; fecha ao clicar fora)
 const rewindBox = $('.rewind')
 const toggleRewindMenu = (open = !rewindBox.classList.contains('open')) => {
   rewindBox.classList.toggle('open', open)

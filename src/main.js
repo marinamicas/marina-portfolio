@@ -5,7 +5,8 @@ import { DEFAULT_VIEW, ZONES } from './data/level.js'
 import { renderer, scene, camera, billboards } from './core/stage.js'
 import { world } from './core/physics.js'
 import { CameraRig } from './core/CameraRig.js'
-import { input, readInput } from './core/input.js'
+import { consumeZoom, input, readInput, SETTINGS as INPUT_SETTINGS } from './core/input.js'
+import { setDetectorGuard } from './core/invalidGestures.js'
 import { collect, state } from './core/state.js'
 import { record, resetHistory } from './core/timeMachine.js'
 import { REDUCED_MOTION } from './utils/helpers.js'
@@ -17,6 +18,13 @@ import { ui } from './ui/modal.js'
 import { paperBurst, toast } from './ui/effects.js'
 import { maybeWin, openItem, updateHUD } from './ui/screens.js'
 import { showPin, updatePins } from './ui/pins.js'
+import './ui/guide.js' // modal guia: escuta os gestos inválidos e o botão ? Ajuda
+
+// true depois que o visitante clica em "Pedalar" (antes disso, zoom e avisos ficam desligados)
+let playing = false
+
+// Gestos inválidos só contam com o jogo rodando, sem janela aberta e com a bike livre
+setDetectorGuard(() => playing && !ui.isOpen && !bike.locked)
 
 buildEnvironment()
 
@@ -85,6 +93,13 @@ gsap.ticker.add((time, deltaMs) => {
   record(dt)
   animateEnvironment(time, dt, bike.body.position)
 
+  // Zoom acumulado pelos gestos desde o último frame (sempre consumido, para não "vazar" depois)
+  const zoom = consumeZoom()
+  if (playing && !ui.isOpen) {
+    if (zoom.reset) rig.resetZoom()
+    rig.zoomBy(zoom.delta)
+  }
+
   rig.lag = bike.locked ? 14 : 5 // rebobinar/viagens: câmera cola na bike
   rig.update(dt, bike.body.position)
   for (const o of billboards) o.rotation.y = rig.yaw
@@ -101,6 +116,7 @@ const startScreen = document.querySelector('#start-screen')
 const startButton = document.querySelector('#btn-start')
 
 function startIntro() {
+  playing = true
   updateHUD()
   lockBike()
   resetHistory()
@@ -139,4 +155,4 @@ startButton.addEventListener('click', () => {
   })
 })
 
-if (import.meta.env.DEV) window.__game = { scene, world, rig, bike, totems, state }
+if (import.meta.env.DEV) window.__game = { scene, world, rig, bike, totems, state, input: INPUT_SETTINGS }

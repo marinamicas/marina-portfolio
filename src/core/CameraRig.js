@@ -17,11 +17,33 @@ export class CameraRig {
     this.following = true
     this.lag = 5
     this.yaw = 0 // usado pelos billboards
+
+    // Zoom do jogador: multiplica a distância da câmera (offset).
+    // `zoomTarget` muda na hora com o gesto; `zoom` persegue o alvo suavemente a cada frame.
+    this.zoom = 1
+    this.zoomTarget = 1
+    this.zoomLimits = { min: 0.45, max: 1.9 } // 0.45 = bem perto da bike; 1.9 = quase o dobro da distância
+    this.zoomSmoothing = 14 // maior = segue o gesto mais rápido (14 ≈ 90% do caminho em 0,16 s)
   }
 
+  /** Aplica um zoom relativo em escala logarítmica (positivo afasta, negativo aproxima). */
+  zoomBy(logDelta) {
+    if (!logDelta) return
+    const { min, max } = this.zoomLimits
+    this.zoomTarget = THREE.MathUtils.clamp(this.zoomTarget * Math.exp(logDelta), min, max)
+  }
+
+  /** Volta suavemente ao zoom padrão. */
+  resetZoom() {
+    this.zoomTarget = 1
+  }
+
+  /** Atualiza a câmera; chamado uma vez por frame com o tempo do frame e o ponto seguido. */
   update(dt, subject) {
     if (this.following) this.target.lerp(subject, 1 - Math.exp(-this.lag * dt))
-    this.camera.position.copy(this.target).add(this.offset)
+    // Amortecimento exponencial: independe da taxa de quadros (60 Hz, 120 Hz…)
+    this.zoom = THREE.MathUtils.damp(this.zoom, this.zoomTarget, this.zoomSmoothing, dt)
+    this.camera.position.copy(this.target).addScaledVector(this.offset, this.zoom)
     this.lookAtPoint.copy(this.target).add(this.look)
     this.camera.lookAt(this.lookAtPoint.add(this.shakeOffset))
     this.yaw = Math.atan2(this.camera.position.x - this.lookAtPoint.x, this.camera.position.z - this.lookAtPoint.z)

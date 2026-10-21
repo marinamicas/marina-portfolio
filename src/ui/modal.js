@@ -39,6 +39,7 @@ export const ui = {
   },
 }
 
+// Fecha pelo ×, clicando fora do cartão ou com Esc
 modal.querySelector('.modal-close').addEventListener('click', () => ui.close())
 modal.addEventListener('click', (e) => {
   if (e.target === modal) ui.close() // clique fora do cartão

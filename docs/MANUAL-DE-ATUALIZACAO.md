@@ -28,6 +28,8 @@ com o arquivo exato que você vai abrir, o trecho que deve procurar e como confe
    - 5.11 Rebobinar
    - 5.12 Ruas, placas, câmera e limites do mapa
    - 5.13 Velocidade da bike e força para atropelar
+   - 5.14 Gestos, zoom e sensibilidade dos controles
+   - 5.15 Guia de navegação e gestos inválidos
 6. [Testando antes de publicar](#6-testando-antes-de-publicar)
 7. [Publicando no GitHub Pages](#7-publicando-no-github-pages)
 8. [Problemas comuns e soluções](#8-problemas-comuns-e-soluções)
@@ -110,7 +112,9 @@ marina-portfolio/
     │   ├── state.js        ← inventário/progresso salvo na aba do navegador
     │   ├── timeMachine.js  ← rebobinar, viagens pelo inventário, reset do mundo
     │   ├── CameraRig.js    ← câmera que segue a bike
-    │   ├── input.js        ← teclado e toque na tela
+    │   ├── input.js        ← teclado, joystick, pinça e roda do mouse (zoom)
+    │   ├── device.js       ← descobre se o visitante usa dedo (celular) ou mouse (PC)
+    │   ├── invalidGestures.js ← percebe gestos que o site não suporta
     │   ├── physics.js      ← física (gravidade, colisões)
     │   └── stage.js        ← cena 3D, luzes, câmera
     ├── world/
@@ -120,6 +124,7 @@ marina-portfolio/
     ├── ui/
     │   ├── screens.js      ← janelas: item, inventário, zerou, game over, tentar novamente
     │   ├── pins.js         ← janelas presas no chão depois que o recorte é destruído
+    │   ├── guide.js        ← guia de navegação (celular x PC) e "não mostrar novamente"
     │   ├── modal.js        ← a janela flutuante (abrir/fechar)
     │   └── effects.js      ← avisos (toast) e papeizinhos voando na tela
     └── utils/              ← funções auxiliares e texturas
@@ -158,6 +163,20 @@ Entender as regras ajuda a saber onde mexer:
    - Se o inventário estiver vazio, não pergunta nada: só volta ao início.
 7. **Onde o progresso fica salvo**: no `sessionStorage` do navegador. Vale enquanto a aba estiver aberta;
    fechar a aba apaga tudo. Nada é enviado para servidor.
+8. **Controles e zoom**:
+
+   | Ação | Computador | Celular/tablet |
+   |---|---|---|
+   | Pedalar e virar | W A S D / setas, ou arrastar com o botão esquerdo | arrastar um dedo (joystick) |
+   | Acelerar | Shift | — |
+   | Zoom | roda do mouse, pinça no trackpad, teclas + e − | pinça com dois dedos |
+   | Zoom normal | duplo clique ou tecla 0 | toque duplo |
+   | Ajuda | botão **? Ajuda** | botão **? Ajuda** |
+
+9. **Guia de navegação**: se a pessoa tenta um gesto que o site não suporta (clicar/tocar no mapa várias
+   vezes, botão direito, três dedos, segurar o dedo parado, deslizar para os lados, apertar teclas sem
+   função), aparece um guia com as instruções do aparelho dela. O botão **"Não mostrar esta dica
+   novamente"** grava a escolha no `localStorage`, que continua valendo mesmo depois de fechar o navegador.
 
 ---
 
@@ -497,6 +516,75 @@ Tudo em `src/data/level.js`:
 
 ---
 
+### 5.14 Gestos, zoom e sensibilidade dos controles
+
+**Arquivo das sensibilidades:** `src/core/input.js` → objeto `SETTINGS` no topo do arquivo.
+
+```js
+export const SETTINGS = {
+  joystick: { deadZone: 8, range: 64 },
+  zoom: { wheel: 0.0014, trackpadPinch: 0.012, key: 0.16 },
+  tap: { maxMove: 10, maxTime: 260, doubleGap: 320 },
+  longPressMs: 900,
+}
+```
+
+| Quero… | O que mudar |
+|---|---|
+| Joystick mais sensível (menos arraste para a força máxima) | Diminua `joystick.range` (ex.: `48`). |
+| Que o dedo possa tremer mais sem mover a bike | Aumente `joystick.deadZone` (ex.: `14`). |
+| Zoom da roda do mouse mais rápido | Aumente `zoom.wheel` (ex.: `0.002`). |
+| Zoom da pinça do trackpad mais suave | Diminua `zoom.trackpadPinch` (ex.: `0.008`). |
+| Cada toque em + / − dar mais zoom | Aumente `zoom.key`. |
+| Toque duplo mais fácil de acertar | Aumente `tap.doubleGap` (em milissegundos). |
+
+**Limites e suavidade do zoom:** `src/core/CameraRig.js`, no `constructor`:
+
+```js
+this.zoomLimits = { min: 0.45, max: 1.9 }  // min = mais perto da bike; max = mais longe
+this.zoomSmoothing = 14                    // maior = segue o gesto mais rápido; menor = mais "macio"
+```
+
+**Como funciona por dentro (para curiosos):** os eventos de toque, mouse e roda só *anotam* o movimento.
+Uma vez por quadro (60 vezes por segundo), o loop do jogo em `src/main.js` pega o total com
+`consumeZoom()` e entrega à câmera. Por isso o zoom fica liso mesmo com muitos eventos por segundo.
+
+---
+
+### 5.15 Guia de navegação e gestos inválidos
+
+**Textos do guia:** `src/ui/guide.js`.
+
+- `GUIDES.touch` → instruções para celular/tablet.
+- `GUIDES.desktop` → instruções para mouse, teclado e trackpad.
+- Cada linha é `['ícone', 'Ação', 'Explicação']`. Para acrescentar uma, copie uma linha e mude os textos.
+- `REASONS` → a frase em destaque que explica qual gesto não funcionou.
+- `COOLDOWN_MS = 30000` → tempo mínimo (em ms) entre dois guias automáticos.
+
+**Quando o guia aparece:** `src/core/invalidGestures.js` → objeto `RULES`.
+
+```js
+tap:   { threshold: 3, windowMs: 3000 },  // 3 toques soltos em até 3 segundos
+click: { threshold: 3, windowMs: 3000 },  // 3 cliques soltos em até 3 segundos
+'unsupported-key': { threshold: 4, windowMs: 3000 },
+```
+
+- `threshold` = quantas vezes o gesto precisa se repetir.
+- `windowMs` = em quanto tempo (milissegundos).
+- Para o guia aparecer **menos**, aumente `threshold`. Para desligar um tipo de gesto, apague a linha dele.
+
+**"Não mostrar esta dica novamente":** grava `mmj-portfolio:hide-gesture-guide` no `localStorage`.
+Para ver o guia automático de novo durante os testes, use uma das opções:
+
+- botão **? Ajuda** → **Voltar a mostrar dicas automáticas**; ou
+- no console (F12): `localStorage.removeItem('mmj-portfolio:hide-gesture-guide')`.
+
+**Testar a versão de celular no computador:** no Chrome, aperte F12 → clique no ícone de celular/tablet
+(**Toggle device toolbar**, ou Ctrl + Shift + M) → recarregue a página. Segure **Shift** e arraste para
+simular a pinça com dois dedos.
+
+---
+
 ## 6. Testando antes de publicar
 
 Rode o projeto (`npm run dev`) e confira esta lista:
@@ -511,6 +599,9 @@ Rode o projeto (`npm run dev`) e confira esta lista:
 - [ ] "Manter o inventário" → volta ao início com tudo conquistado.
 - [ ] "Resetar tudo" → contador volta a `0/…` e todos os recortes ficam de pé.
 - [ ] Coletar tudo e clicar em Sair → aparece "Você zerou!" (não Game Over).
+- [ ] Roda do mouse / pinça do trackpad aproxima e afasta a câmera sem dar zoom na página; duplo clique volta ao normal.
+- [ ] No modo celular do F12: arrastar um dedo pedala, pinça dá zoom, toque duplo volta ao normal.
+- [ ] Clicar 3 vezes seguidas no mapa abre o guia; "Não mostrar esta dica novamente" faz ele parar de aparecer.
 - [ ] O console (F12) não mostra erros em vermelho.
 
 Depois, gere a versão final e teste:
