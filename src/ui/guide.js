@@ -3,24 +3,52 @@ import { onInvalidGesture } from '../core/invalidGestures.js'
 import { ui } from './modal.js'
 import { toast } from './effects.js'
 
-/*
-  Modal guia de navegação.
+/* ==========================================================================
+   GUIA DE NAVEGAÇÃO (janela "Como navegar")
 
-  Aparece sozinho quando o detector confirma um gesto inválido, com instruções
-  para touch (celular/tablet) ou para mouse/teclado/trackpad (PC). O botão
-  "Não mostrar esta dica novamente" grava a preferência no localStorage, que
-  continua valendo nas próximas visitas. O botão "? Ajuda" do HUD abre o guia
-  manualmente a qualquer momento, mesmo com a dica automática desativada.
-*/
+   Papel deste arquivo: montar e abrir a janela com as instruções de uso do
+   site, em duas versões: touch (celular/tablet) e desktop (mouse, teclado,
+   trackpad).
 
+   Ela aparece de dois jeitos:
+   1. Automaticamente, quando o detector de gestos inválidos (core/invalidGestures.js)
+      confirma que a pessoa está tentando navegar de um jeito que não funciona.
+      Nesse caso, uma frase em destaque (REASONS) explica o que deu errado.
+   2. Manualmente, pelo botão "? Ajuda" do HUD (sempre funciona).
+
+   O botão "Não mostrar esta dica novamente" grava a escolha no localStorage,
+   que continua valendo nas próximas visitas (diferente do progresso, que fica
+   no sessionStorage).
+
+   Depende de: device.js (touch x desktop), invalidGestures.js (assinatura do
+   evento), modal.js (ui.open) e effects.js (toast).
+   Quem usa: main.js importa este arquivo só para ele se registrar (efeito colateral).
+   Aparência: bloco "Modal guia de navegação" em src/styles/main.css.
+
+   Onde mexer:
+   - GUIDES.touch / GUIDES.desktop: título e linhas [ícone, ação, explicação].
+   - REASONS: frase de destaque para cada tipo de gesto inválido.
+   - COOLDOWN_MS: intervalo mínimo entre dois guias automáticos.
+   - STORAGE_KEY: nome da chave no localStorage (mudar = todo mundo volta a ver a dica).
+   ========================================================================== */
+
+// Chave no localStorage que guarda "a pessoa pediu para não ver mais a dica automática"
 const STORAGE_KEY = 'mmj-portfolio:hide-gesture-guide'
 
 // Intervalo mínimo entre dois avisos AUTOMÁTICOS, para nunca virar uma enxurrada de modais.
 // Só conta quando o guia realmente aparece (com a dica desligada, nada é consumido).
+// 30000 ms = 30 s. Aumente para incomodar menos; diminua para ajudar mais rápido.
 const COOLDOWN_MS = 30000
+// Momento (performance.now, em ms) em que o último guia automático apareceu.
+// -Infinity = nunca apareceu, então o primeiro passa direto pelo cooldown.
 let lastAutoShow = -Infinity
 
-/** true se o visitante pediu para não ver mais a dica automática. */
+/**
+ * true se o visitante pediu para não ver mais a dica automática.
+ * Lê o localStorage dentro de try/catch porque alguns navegadores em modo
+ * privado lançam erro ao acessá-lo.
+ * @returns {boolean}
+ */
 export function isGuideDisabled() {
   try {
     return localStorage.getItem(STORAGE_KEY) === '1'
@@ -29,7 +57,10 @@ export function isGuideDisabled() {
   }
 }
 
-/** Liga/desliga a dica automática e grava a escolha. */
+/**
+ * Liga/desliga a dica automática e grava a escolha no localStorage.
+ * @param {boolean} disabled true = não mostrar mais; false = voltar a mostrar
+ */
 function setGuideDisabled(disabled) {
   try {
     if (disabled) localStorage.setItem(STORAGE_KEY, '1')
@@ -39,7 +70,11 @@ function setGuideDisabled(disabled) {
   }
 }
 
-// Frase de abertura conforme o gesto que disparou o aviso
+/**
+ * Frase de abertura conforme o gesto que disparou o aviso.
+ * As chaves são os mesmos nomes de RULES em core/invalidGestures.js.
+ * Se um gesto não tiver frase aqui, o guia abre sem a faixa de destaque.
+ */
 const REASONS = {
   tap: 'Para mover a bike, toque nela e arraste até os recortes.',
   click: 'Para mover a bike, clique nela e arraste até os recortes.',
@@ -51,7 +86,11 @@ const REASONS = {
   'unsupported-key': 'Essas teclas não fazem nada no jogo.',
 }
 
-// Conteúdo de cada versão do guia: [ícone, ação, explicação]
+/**
+ * Conteúdo de cada versão do guia. Cada linha de `items` é
+ * [ícone (emoji), ação (negrito), explicação (texto normal)].
+ * Para acrescentar uma instrução, copie uma linha e troque os três textos.
+ */
 const GUIDES = {
   touch: {
     title: 'Como navegar no celular',
@@ -78,8 +117,17 @@ const GUIDES = {
 
 /**
  * Abre o guia.
- * - kind:   gesto inválido que motivou o aviso (null quando aberto pelo botão Ajuda)
- * - device: 'touch' ou 'desktop' (padrão: detectado automaticamente)
+ *
+ * Como funciona: escolhe a versão (touch/desktop), transforma cada linha de
+ * `items` em um <li> com ícone + título + texto, monta a faixa de motivo (se
+ * `kind` tiver frase em REASONS) e escolhe qual botão secundário mostrar:
+ * "Não mostrar esta dica novamente" ou, se já estiver desligada, "Voltar a
+ * mostrar dicas automáticas". Por fim abre tudo na janela flutuante com a
+ * classe 'guide-card' (CSS compacto no celular).
+ *
+ * @param {object} [o]
+ * @param {string|null} [o.kind=null] gesto inválido que motivou o aviso (null quando aberto pelo botão Ajuda)
+ * @param {'touch'|'desktop'} [o.device] versão do guia (padrão: detectado automaticamente)
  */
 export function showGuide({ kind = null, device = isTouchDevice() ? 'touch' : 'desktop' } = {}) {
   const guide = GUIDES[device] ?? GUIDES.desktop
@@ -105,7 +153,11 @@ export function showGuide({ kind = null, device = isTouchDevice() ? 'touch' : 'd
   )
 }
 
-// Botões do guia (delegação: o conteúdo da janela é recriado a cada abertura)
+// Botões do guia (delegação: o conteúdo da janela é recriado a cada abertura).
+// Escutamos o clique no contêiner fixo (ui.content) e descobrimos qual botão foi
+// pelo atributo data-guide: 'ok' só fecha; 'disable' grava a preferência e fecha;
+// 'enable' apaga a preferência e fecha. Cliques sem data-guide são ignorados
+// (são de outras janelas que usam o mesmo contêiner).
 ui.content.addEventListener('click', (e) => {
   const action = e.target.closest('[data-guide]')?.dataset.guide
   if (!action) return
@@ -119,7 +171,10 @@ ui.content.addEventListener('click', (e) => {
   ui.close()
 })
 
-// Gesto inválido confirmado → mostra o guia (se o visitante não desativou)
+// Gesto inválido confirmado → mostra o guia (se o visitante não desativou).
+// Fluxo: invalidGestures.js confirma o gesto → chama esta função com { kind, device }
+// → se a dica está desligada, nada; se o último guia foi há menos de COOLDOWN_MS, nada;
+// senão anota o horário e abre o guia com a frase do gesto.
 onInvalidGesture(({ kind, device }) => {
   if (isGuideDisabled()) return
   const now = performance.now()
@@ -128,5 +183,6 @@ onInvalidGesture(({ kind, device }) => {
   showGuide({ kind, device })
 })
 
-// Botão "? Ajuda" do HUD: abre sempre
+// Botão "? Ajuda" do HUD: abre sempre (ignora cooldown e preferência).
+// O `?.` protege caso o botão seja removido do index.html.
 document.querySelector('#btn-help')?.addEventListener('click', () => showGuide())

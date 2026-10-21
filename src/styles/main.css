@@ -1,18 +1,42 @@
+/* ==========================================================================
+   main.css — aparência de tudo que é HTML por cima do mundo 3D:
+   HUD (contatos, barra, botões, miniatura da foto), janelas flutuantes,
+   tela inicial, janelas presas no chão, visualizador, guia, foto do céu e efeitos.
+
+   O mundo 3D em si (chão, recortes, bike, cores do cenário) NÃO é estilizado
+   aqui: ele é desenhado pelo Three.js (src/world/*) com as cores de PALETTE em
+   src/data/level.js. Mantenha as duas paletas iguais.
+
+   Organização: cada bloco "---------- Nome ----------" cuida de uma parte da tela.
+   Unidades: px = pixels; vw/vh = % da largura/altura da janela; rem/em não são usados.
+
+   Onde mexer:
+   - Cores → variáveis em :root (logo abaixo).
+   - Tamanho/posição dos botões → bloco "HUD: ações".
+   - Miniatura da foto e foto no céu → blocos "Foto de perfil".
+   - Celular → blocos @media (max-width: 600px) no fim de cada seção.
+   ========================================================================== */
+
+/* Variáveis de cor usadas em todo o CSS com var(--nome). Mesmos valores de PALETTE (level.js). */
 :root {
-  --black: #0d0b10;
-  --ink: #1a1420;
-  --purple: #6b2fd6;
-  --violet: #8f5cf7;
-  --lilac: #c9b6ff;
-  --white: #f5f2ea;
+  --black: #0d0b10; /* fundo da página */
+  --ink: #1a1420; /* preto levemente roxo (rodapé do visualizador) */
+  --purple: #6b2fd6; /* cor de destaque: botões principais, toast, sombras dos ícones */
+  --violet: #8f5cf7; /* roxo claro (reservado para variações) */
+  --lilac: #c9b6ff; /* lilás: hover dos botões, destaques, citação da bike */
+  --white: #f5f2ea; /* "branco de papel" das janelas e botões */
 }
 
+/* ---------- Base da página ---------- */
+/* Reset mínimo: todo elemento mede largura/altura incluindo padding e borda; sem margens padrão */
 * { box-sizing: border-box; margin: 0; }
+/* A página ocupa a janela inteira e nunca rola: o jogo é que "anda" */
 html, body { height: 100%; overflow: hidden; background: var(--black); color: var(--white); font-family: system-ui, 'Segoe UI', sans-serif; }
 /* Jogo: sem seleção de texto, sem menu de "segurar" do iOS, sem efeito elástico, sem "puxar para atualizar"
    e sem flash azul ao tocar */
 html { overscroll-behavior: none; }
 body { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+/* Classe genérica para esconder qualquer elemento (o !important vence qualquer outra regra) */
 .hidden { display: none !important; }
 /* touch-action: none → o navegador não rouba os gestos do canvas (arrastar bike/cenário e pinça são do jogo):
    sem rolagem da página, sem zoom do navegador e sem "puxar para atualizar" */
@@ -21,98 +45,175 @@ body { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none
 .hud-header, .hud-progress, .hud-actions, .pins, #toast { touch-action: none; }
 button, a, .btn { touch-action: manipulation; }
 
-/* Dica de controles conforme o tipo de tela (dedo x mouse) */
+/* Dica de controles conforme o tipo de tela (dedo x mouse): só uma das duas <small> aparece */
 .only-touch { display: none !important; }
 @media (pointer: coarse) {
   .only-touch { display: block !important; }
   .only-desktop { display: none !important; }
 }
 
-/* ---------- HUD: header ---------- */
+/* ---------- Foto de perfil: camada do "céu" ----------
+   Camada fixa que cobre a janela, por cima do canvas (z-index 2) e abaixo das janelas
+   presas no chão (5) e do HUD (10). pointer-events: none deixa os gestos passarem para o jogo.
+   As variáveis --sky-* são definidas por src/ui/profile.js a partir de PROFILE.sky (level.js):
+   - --sky-opacity: transparência geral (0.22 = bem sutil)
+   - --sky-blend:   'screen' só clareia áreas escuras → parece fundo; 'normal' sobrepõe de verdade
+   - --sky-fade-from / --sky-fade-to: faixa vertical onde a foto some (máscara em degradê),
+     deixando a parte de baixo da tela (o chão perto da bike) limpa. */
+.sky-photo { position: fixed; inset: 0; z-index: 2; overflow: hidden; pointer-events: none;
+  opacity: var(--sky-opacity, .22); mix-blend-mode: var(--sky-blend, screen);
+  -webkit-mask-image: linear-gradient(to bottom, #000 var(--sky-fade-from, 45%), transparent var(--sky-fade-to, 85%));
+  mask-image: linear-gradient(to bottom, #000 var(--sky-fade-from, 45%), transparent var(--sky-fade-to, 85%)); }
+/* A imagem é posicionada por JS (width/height/transform) para os olhos ficarem na âncora.
+   filter suaviza cor e contraste para a foto não "brigar" com o cenário. */
+.sky-photo img { position: absolute; left: 0; top: 0; max-width: none; display: block; will-change: transform;
+  filter: saturate(.55) contrast(.9) brightness(1.05); }
+
+/* Mira de calibração (aparece só com ?olhos no endereço): cruz vermelha no ponto PROFILE.anchor */
+.eyes-marker { position: fixed; z-index: 60; width: 30px; height: 30px; translate: -50% -50%; pointer-events: none;
+  border: 2px solid #ff3366; border-radius: 50%; box-shadow: 0 0 0 2px #fff, inset 0 0 0 2px #fff; }
+.eyes-marker::before, .eyes-marker::after { content: ''; position: absolute; background: #ff3366; }
+.eyes-marker::before { left: -14px; right: -14px; top: 50%; height: 2px; translate: 0 -50%; }
+.eyes-marker::after { top: -14px; bottom: -14px; left: 50%; width: 2px; translate: -50% 0; }
+
+/* ---------- Foto de perfil: miniatura (thumbnail) no HUD ----------
+   Botão quadrado no canto superior esquerdo, com moldura de papel branca, sombra roxa
+   deslocada e uma leve rotação (mesma linguagem dos ícones de contato). */
+.hud-avatar { position: fixed; top: 12px; left: 12px; z-index: 11; width: 52px; height: 52px; padding: 3px; border: 0; cursor: pointer;
+  background: var(--white); box-shadow: 3px 4px 0 var(--purple); transform: rotate(-4deg); transition: transform .2s; }
+.hud-avatar:hover, .hud-avatar:focus-visible { transform: rotate(2deg) scale(1.12); outline: none; }
+/* object-fit: cover preenche o quadrado cortando as sobras; object-position (definido por JS) centraliza nos olhos */
+.hud-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; background: var(--lilac); }
+
+/* ---------- Foto de perfil: janela "Sobre a Marina" ---------- */
+/* Duas colunas: foto à esquerda (150 px) e textos à direita */
+.profile-card { display: grid; grid-template-columns: 150px 1fr; gap: 22px; align-items: start; }
+/* Moldura de papel inclinada com sombra roxa */
+.profile-photo { margin: 0; padding: 6px; background: var(--white); box-shadow: 4px 5px 0 var(--purple); transform: rotate(-3deg); }
+.profile-photo img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; background: var(--lilac); }
+/* Easter egg da bicicleta: citação em lilás com recorte irregular */
+.bike-note { margin: 0 0 16px; padding: 10px 14px; background: var(--lilac); font-weight: 700; line-height: 1.4;
+  clip-path: polygon(2% 0, 100% 6%, 98% 100%, 0 94%); }
+.bike-note span { margin-right: 4px; }
+/* Aviso discreto quando a foto real ainda não foi colocada */
+.profile-hint { display: block; margin-bottom: 12px; font-size: 12px; opacity: .7; }
+
+/* ---------- HUD: header (ícones de contato no topo, centralizados) ----------
+   pointer-events: none no header deixa cliques "passarem" para o jogo fora dos ícones;
+   os próprios links voltam a receber cliques com pointer-events: auto. */
 .hud-header { position: fixed; inset: 0 0 auto; display: flex; justify-content: center; padding: 12px; z-index: 10; pointer-events: none; }
 .hud-links { display: flex; gap: 10px; pointer-events: auto; }
 .hud-links a { display: block; width: 48px; height: 48px; transition: transform .2s; }
+/* Ícones levemente tortos, alternando o lado, como recortes colados à mão */
 .hud-links a:nth-child(odd) { transform: rotate(-3deg); }
 .hud-links a:nth-child(even) { transform: rotate(2deg); }
 .hud-links a:hover, .hud-links a:focus-visible { transform: rotate(-6deg) scale(1.12); }
+/* Sombra roxa deslocada: efeito de papel recortado */
 .hud-links img { width: 100%; height: 100%; display: block; filter: drop-shadow(2px 3px 0 var(--purple)); }
+/* O texto do link fica só para leitores de tela (escondido visualmente) */
 .hud-links span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 
-/* contatos dentro das janelas (clonados do header) */
+/* Contatos dentro das janelas (clonados do header por src/ui/screens.js): ícone + nome em um "recorte" preto */
 .contact-list { display: flex; flex-wrap: wrap; gap: 10px; }
 .contact-list a { display: flex; align-items: center; gap: 8px; padding: 6px 14px 6px 6px; background: var(--black); color: var(--white);
   font-weight: 800; text-decoration: none; clip-path: polygon(3% 0, 100% 6%, 97% 100%, 0 92%); }
 .contact-list a:hover { background: var(--purple); }
 .contact-list img { width: 36px; height: 36px; }
 
-/* ---------- HUD: progresso ---------- */
+/* ---------- HUD: progresso ("Conhecimento sobre Marina: X%") ---------- */
 .hud-progress { position: fixed; top: 74px; left: 50%; translate: -50% 0; width: min(420px, 80vw); z-index: 10; font-size: 13px; font-weight: 700; text-align: center; text-shadow: 0 1px 2px var(--black); pointer-events: none; }
+/* Trilho da barra, com recorte inclinado */
 .hud-progress .bar { height: 10px; margin-top: 6px; background: rgba(255, 255, 255, .15); clip-path: polygon(0 0, 100% 20%, 100% 100%, 0 80%); }
+/* Preenchimento: a largura (0 a 100%) é animada por src/ui/screens.js */
 #progress-fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--purple), var(--lilac)); }
 
-/* ---------- HUD: ações ---------- */
+/* ---------- HUD: ações (botões do canto inferior esquerdo) ---------- */
 .hud-actions { position: fixed; bottom: 16px; left: 16px; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; z-index: 10; }
+/* Estilo base de TODOS os botões do site (.btn também é usado em links): papel branco com recorte inclinado */
 .hud-actions button, .btn {
   border: 0; padding: 12px 16px; cursor: pointer; font: inherit; font-weight: 800; text-decoration: none; display: inline-block;
   background: var(--white); color: var(--black); clip-path: polygon(3% 0, 100% 6%, 97% 100%, 0 92%);
 }
 .hud-actions button:hover, .btn:hover, .hud-actions button:focus-visible, .btn:focus-visible { background: var(--lilac); }
+/* Variante "fantasma": fundo preto (botão secundário) */
 .btn.ghost { background: var(--black); color: var(--white); }
 .btn.ghost:hover { background: var(--purple); }
+/* Botão desabilitado (ex.: "Recortando papéis…" enquanto as imagens carregam) */
 .btn:disabled { opacity: .5; cursor: wait; }
+/* Contador "X/Y" dentro do botão Inventário */
 #inventory-count { margin-left: 4px; padding: 2px 6px; background: var(--purple); color: var(--white); font-size: 12px; }
 
+/* Menu do botão Rebobinar: escondido; aparece acima do botão quando .rewind recebe a classe .open */
 .rewind { position: relative; }
 .rewind-menu { position: absolute; bottom: calc(100% + 6px); left: 0; display: none; flex-direction: column; gap: 6px; min-width: 210px; }
 .rewind.open .rewind-menu { display: flex; }
 .rewind-menu button { text-align: left; background: var(--purple); color: var(--white); }
 
-/* ---------- Toast ---------- */
+/* ---------- Toast (aviso rápido roxo embaixo da tela) ----------
+   Começa invisível; src/ui/effects.js anima opacidade e posição com GSAP. */
 #toast { position: fixed; bottom: 80px; left: 50%; translate: -50% 0; max-width: 90vw; padding: 10px 18px; background: var(--purple); color: var(--white);
   font-weight: 700; text-align: center; z-index: 15; opacity: 0; visibility: hidden; pointer-events: none;
   clip-path: polygon(2% 0, 100% 8%, 98% 100%, 0 90%); }
 
-/* ---------- Janelas flutuantes ---------- */
+/* ---------- Janelas flutuantes (modal) ---------- */
+/* Fundo escurecido que cobre a tela; o cartão fica centralizado */
 .modal { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(13, 11, 16, .55); z-index: 20; }
 /* Dentro da janela o texto pode ser selecionado e rolado com o dedo */
 .modal-card { user-select: text; -webkit-user-select: text; touch-action: pan-y; overscroll-behavior: contain; }
+/* Cartão de papel: largura máxima 560 px (92% da tela no celular), rola por dentro se o conteúdo for grande */
 .modal-card { position: relative; width: min(560px, 92vw); max-height: 82vh; overflow: auto; padding: 40px 32px 32px;
   background: var(--white); color: var(--black); clip-path: polygon(2% 3%, 98% 0, 100% 96%, 0 100%); }
 .modal-card h2 { font-size: 28px; margin-bottom: 12px; text-transform: uppercase; line-height: 1.1; }
 .modal-card p { line-height: 1.55; margin-bottom: 16px; }
+/* "Etiqueta" roxa pequena acima do título (ex.: categoria do recorte) */
 .modal-card .tag, .start-card .tag { color: var(--purple); font-weight: 800; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 4px; }
 .modal-close { position: absolute; top: 8px; right: 14px; border: 0; background: none; font-size: 30px; cursor: pointer; color: var(--black); }
+/* Linha de botões das janelas */
 .actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .actions.spaced { margin-top: 16px; }
+/* Dentro das janelas, o botão principal é roxo (e fica preto ao passar o mouse) */
 .modal-card .actions .btn:not(.ghost) { background: var(--purple); color: var(--white); }
 .modal-card .actions .btn:not(.ghost):hover, .modal-card .actions .btn:not(.ghost):focus-visible { background: var(--black); }
+/* Janela Game Over: título maior e roxo */
 .game-over h2 { font-size: 40px; color: var(--purple); letter-spacing: .04em; }
+/* Lista do inventário: um botão por recorte; .got = conquistado (clicável), .locked = ainda não */
 .inventory { list-style: none; padding: 0; display: grid; gap: 8px; margin-bottom: 16px; }
 .inventory button { width: 100%; text-align: left; }
 .inventory .got button { background: var(--black); color: var(--white); }
 .inventory .got button:hover { background: var(--purple); }
 .inventory .locked button { opacity: .45; cursor: not-allowed; }
 .inventory small { display: block; opacity: .75; margin-top: 4px; }
+/* Janela "Sobre": no celular, a foto fica em cima dos textos */
+@media (max-width: 600px) {
+  .profile-card { grid-template-columns: 1fr; }
+  .profile-photo { width: 140px; }
+}
 
 /* ---------- Tela inicial ---------- */
+/* Cobre tudo (z-index 40) com um brilho roxo no canto e fundo quase preto */
 #start-screen { position: fixed; inset: 0; display: grid; place-items: center; z-index: 40;
   background: radial-gradient(circle at 30% 20%, rgba(107, 47, 214, .35), transparent 60%), rgba(13, 11, 16, .82); }
 .start-card { width: min(520px, 90vw); padding: 40px 36px; background: var(--white); color: var(--black); text-align: left;
   clip-path: polygon(3% 2%, 100% 0, 97% 100%, 0 96%); }
+/* Título grande: clamp = mínimo 34 px, cresce com a largura (7vw), máximo 54 px */
 .start-card h1 { font-family: 'Arial Black', Impact, sans-serif; font-size: clamp(34px, 7vw, 54px); line-height: .95; margin: 6px 0 16px; text-transform: uppercase; }
 .start-card p { line-height: 1.5; margin-bottom: 20px; }
 .start-card .btn { background: var(--purple); color: var(--white); font-size: 18px; padding: 14px 26px; }
 .start-card .btn:hover { background: var(--black); }
 .start-card small { display: block; margin-top: 16px; opacity: .7; }
 
-/* ---------- Janelas presas no chão (recortes conquistados) ---------- */
+/* ---------- Janelas presas no chão (recortes conquistados) ----------
+   Camada .pins cobre a tela; cada .pin é um ponto (0×0) movido por JS (translate) para a
+   posição do recorte projetada no 3D. O cartão (.pin-card) "cresce" para cima a partir desse ponto. */
 .pins { position: fixed; inset: 0; z-index: 5; pointer-events: none; overflow: hidden; }
 .pin { position: absolute; left: 0; top: 0; width: 0; height: 0; }
+/* transform-origin na base: ao escalar com a distância, o cartão fica "plantado" no chão */
 .pin-card { position: absolute; left: 0; bottom: 0; translate: -50% 0; transform-origin: 50% 100%; width: 250px; padding: 14px 16px 16px;
   background: var(--white); color: var(--black); pointer-events: auto; visibility: hidden;
   clip-path: polygon(2% 3%, 98% 0, 100% 96%, 0 100%); }
 .pin-card .tag { color: var(--purple); font-weight: 800; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 2px; }
 .pin-card h3 { font-size: 16px; text-transform: uppercase; line-height: 1.1; margin-bottom: 6px; }
+/* Texto limitado a 3 linhas (line-clamp) com reticências */
 .pin-card p { font-size: 12px; line-height: 1.4; margin-bottom: 10px;
   display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .pin-card .actions { gap: 6px; }
@@ -120,13 +221,15 @@ button, a, .btn { touch-action: manipulation; }
 .pin-card .btn:hover, .pin-card .btn:focus-visible { background: var(--black); }
 #inventory-count { display: inline-block; }
 
-/* ---------- Modal guia de navegação ---------- */
+/* ---------- Modal guia de navegação (src/ui/guide.js) ---------- */
 .guide { list-style: none; padding: 0; display: grid; gap: 12px; margin-bottom: 20px; }
 .guide li { display: flex; gap: 12px; align-items: flex-start; }
+/* Quadradinho preto com o emoji do gesto */
 .guide-icon { flex: 0 0 40px; height: 40px; display: grid; place-items: center; font-size: 22px; background: var(--black); color: var(--white);
   clip-path: polygon(6% 0, 100% 8%, 94% 100%, 0 92%); }
 .guide strong { display: block; margin-bottom: 2px; }
 .guide p { margin: 0; line-height: 1.4; font-size: 14px; }
+/* Frase em destaque explicando qual gesto não funcionou */
 .guide-reason { padding: 8px 12px; background: var(--lilac); font-weight: 700; }
 /* Botões do guia sempre visíveis no rodapé da janela, mesmo se a lista precisar rolar */
 .guide-card .actions { position: sticky; bottom: -32px; margin: 0 -32px -32px; padding: 14px 32px 24px; background: var(--white); }
@@ -148,12 +251,15 @@ button, a, .btn { touch-action: manipulation; }
 .visitors { display: block; margin-top: 6px; font-size: 11px; font-weight: 600; opacity: .8; }
 .start-card .visitors { margin-top: 10px; color: var(--purple); opacity: 1; }
 
-/* ---------- Visualizador em tela cheia (links externos e "Saiba mais") ---------- */
+/* ---------- Visualizador em tela cheia (links externos e "Saiba mais", src/ui/viewer.js) ---------- */
+/* Cobre tudo (z-index 80), em coluna: barra roxa em cima + corpo (iframe ou cartão) embaixo */
 .viewer { position: fixed; inset: 0; z-index: 80; display: flex; flex-direction: column; background: var(--black);
   touch-action: auto; user-select: text; -webkit-user-select: text; }
+/* env(safe-area-inset-top): respeita o "notch" do iPhone */
 .viewer-bar { display: flex; align-items: center; gap: 8px; padding: 8px 10px; padding-top: max(8px, env(safe-area-inset-top));
   background: var(--purple); color: var(--white); }
 .viewer-title { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+/* Título/host em uma linha com reticências se não couber */
 .viewer-title strong, .viewer-title small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .viewer-title small { opacity: .8; font-size: 12px; }
 .viewer-btn { flex: none; border: 0; padding: 10px 14px; font: inherit; font-weight: 800; cursor: pointer; background: var(--white); color: var(--black);
@@ -161,9 +267,11 @@ button, a, .btn { touch-action: manipulation; }
 .viewer-btn:hover, .viewer-btn:focus-visible { background: var(--lilac); }
 .viewer-body { position: relative; flex: 1; display: flex; flex-direction: column; min-height: 0; background: var(--white); }
 .viewer-body iframe { flex: 1; width: 100%; border: 0; background: var(--white); }
+/* "Carregando…" centralizado por cima do iframe até ele carregar */
 .viewer-loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--black); font-weight: 800; pointer-events: none; }
 .viewer-hint { margin: 0; padding: 6px 12px; padding-bottom: max(6px, env(safe-area-inset-bottom)); font-size: 12px; background: var(--ink); color: var(--white); }
 .viewer-link { border: 0; background: none; color: var(--lilac); font: inherit; font-weight: 800; text-decoration: underline; cursor: pointer; }
+/* Cartão usado para e-mail, telefone e sites que proíbem iframe */
 .viewer-card { margin: auto; padding: 32px 24px; max-width: 480px; color: var(--black); text-align: center; }
 .viewer-card .actions { justify-content: center; }
 .viewer-card .actions .btn:not(.ghost) { background: var(--purple); color: var(--white); }
@@ -176,24 +284,30 @@ button, a, .btn { touch-action: manipulation; }
   .viewer-btn { padding: 9px 12px; font-size: 14px; }
 }
 
+/* ---------- Aviso de WebGL indisponível (mostrado por src/core/stage.js) ---------- */
 #no-webgl { position: fixed; inset: 0; display: grid; place-items: center; padding: 24px; z-index: 50; background: var(--black); text-align: center; line-height: 1.5; }
 
 /* ---------- Efeitos ---------- */
+/* Papeizinhos triangulares que voam pela tela no atropelo (criados por src/ui/effects.js) */
 .paper-bit { position: fixed; left: 0; top: 0; width: 18px; height: 18px; pointer-events: none; z-index: 30;
   clip-path: polygon(50% 0, 100% 100%, 0 100%); }
 
+/* Rebobinando: o canvas fica dessaturado/esverdeado como fita VHS e o texto "◀◀ REBOBINANDO" pisca */
 body.is-rewinding .webgl { filter: saturate(.4) contrast(1.2) hue-rotate(-25deg); }
 body.is-rewinding::after { content: '◀◀ REBOBINANDO'; position: fixed; top: 110px; left: 50%; translate: -50% 0; z-index: 15;
   font: 800 22px monospace; letter-spacing: .2em; animation: blink .6s steps(2) infinite; pointer-events: none; }
 @keyframes blink { 50% { opacity: 0; } }
 
+/* ---------- Celular (telas até 600 px de largura) ---------- */
 @media (max-width: 600px) {
+  .hud-avatar { width: 42px; height: 42px; top: 8px; left: 8px; }
   .hud-links a { width: 40px; height: 40px; }
   .hud-progress { top: 62px; }
   .hud-actions { left: 8px; right: 8px; bottom: 8px; }
   .hud-actions button { padding: 10px 12px; font-size: 13px; }
 }
 
+/* Acessibilidade: quem pediu menos animações no sistema não vê o texto piscando */
 @media (prefers-reduced-motion: reduce) {
   body.is-rewinding::after { animation: none; }
 }

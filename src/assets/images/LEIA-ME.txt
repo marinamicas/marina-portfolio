@@ -1,0 +1,16 @@
+Coloque aqui a FOTO DE PERFIL com o nome exato configurado em src/data/level.js (PROFILE.image):
+
+  profile.jpeg     (também aceita .jpg, .png, .webp ou .avif — ajuste o nome em PROFILE.image)
+
+Onde ela aparece:
+  - miniatura (thumbnail) no canto superior esquerdo do jogo;
+  - fundo sutil do "céu", com os olhos sempre visíveis na tela;
+  - janela "Sobre a Marina" (clique na miniatura).
+
+Dicas:
+  - Prefira uma foto com o rosto bem visível e espaço ao redor (ela é ampliada para cobrir a tela).
+  - Tamanho recomendado: até 1600 px no maior lado; JPG ou WebP com boa compressão (menos de 300 KB).
+  - Depois de colocar a foto, abra o site com ?olhos no fim do endereço (ex.: http://localhost:5173/?olhos)
+    e ajuste PROFILE.eyes em src/data/level.js até a mira ficar sobre os olhos.
+
+Enquanto o arquivo não existir, o jogo mostra um retrato provisório gerado automaticamente.

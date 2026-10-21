@@ -1,0 +1,7 @@
+# Regras para robôs de busca (Google, Bing…). Tudo pode ser indexado.
+# O arquivo é copiado como está para a raiz do site publicado.
+User-agent: *
+Allow: /
+
+# Mapa do site: ajuda os buscadores a encontrar a página principal.
+Sitemap: https://marinamicas.github.io/marina-portfolio/sitemap.xml

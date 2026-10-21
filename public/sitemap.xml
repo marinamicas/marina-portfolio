@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Mapa do site para buscadores. O portfólio é uma única página.
+  Se o endereço do site mudar, troque o <loc> abaixo e também em public/robots.txt
+  e nas tags <link rel="canonical"> / og:url do index.html.
+  <lastmod> = data da última alteração relevante (AAAA-MM-DD).
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://marinamicas.github.io/marina-portfolio/</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>

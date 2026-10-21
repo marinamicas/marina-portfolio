@@ -32,6 +32,10 @@ com o arquivo exato que você vai abrir, o trecho que deve procurar e como confe
    - 5.15 Guia de navegação e gestos inválidos
    - 5.16 Links externos no visualizador em tela cheia
    - 5.17 Contador de visitantes
+   - 5.18 Foto de perfil: miniatura, céu e janela "Sobre"
+   - 5.19 Partículas da bike
+   - 5.20 SEO, favicon e prévia ao compartilhar
+   - 5.21 Easter egg da bicicleta
 6. [Testando antes de publicar](#6-testando-antes-de-publicar)
 7. [Publicando no GitHub Pages](#7-publicando-no-github-pages)
 8. [Problemas comuns e soluções](#8-problemas-comuns-e-soluções)
@@ -99,15 +103,20 @@ __game.bike.body.position  // posição atual da bike (x, y, z)
 
 ```
 marina-portfolio/
-├── index.html              ← estrutura da página: topo com contatos, botões, tela inicial
-├── public/                 ← arquivos copiados sem alteração (currículo, favicon, imagem de prévia)
+├── index.html              ← estrutura da página + SEO (título, descrição, prévia, favicon)
+├── public/                 ← arquivos copiados sem alteração
+│   ├── favicon.svg         ← ícone da aba
+│   ├── apple-touch-icon.png ← ícone 180×180 para iPhone/iPad
+│   ├── og-image.png        ← imagem de prévia ao compartilhar o link (1200×630)
+│   ├── robots.txt, sitemap.xml ← ajudam o Google a indexar
 │   └── docs/               ← coloque aqui o currículo em PDF
 ├── docs/                   ← este manual
 └── src/
     ├── main.js             ← "maestro": junta tudo, roda o loop do jogo e trata os atropelos
-    ├── data/level.js       ← ★ CONTEÚDO: textos, recortes, links, ruas, placas, câmera
-    ├── styles/main.css     ← aparência das janelas, botões, HUD (cores, tamanhos, fontes)
+    ├── data/level.js       ← ★ CONTEÚDO: textos, recortes, links, ruas, placas, câmera, foto, partículas
+    ├── styles/main.css     ← aparência das janelas, botões, HUD, miniatura e foto do céu
     ├── assets/
+    │   ├── images/         ← ★ FOTO DE PERFIL (profile.jpeg)
     │   ├── cutouts/        ← ★ IMAGENS dos recortes (bike, Marina, placas, experiências…)
     │   └── ui/icons/       ← ícones do topo (LinkedIn, GitHub, e-mail…)
     ├── core/
@@ -123,8 +132,10 @@ marina-portfolio/
     ├── world/
     │   ├── totems.js       ← os recortes colecionáveis e a explosão em papel
     │   ├── bike.js         ← a bicicleta (velocidade, curvas, placas magnéticas)
+    │   ├── particles.js    ← rastro de partículas que a bike solta ao se mover
     │   └── environment.js  ← chão, ruas, enfeites, placas, horizonte
     ├── ui/
+    │   ├── profile.js      ← foto de perfil: miniatura, foto no céu e janela "Sobre a Marina"
     │   ├── screens.js      ← janelas: item, inventário, zerou, game over, resetar, contador de visitantes
     │   ├── viewer.js       ← visualizador em tela cheia para links externos e "Saiba mais"
     │   ├── pins.js         ← janelas presas no chão depois que o recorte é destruído
@@ -134,11 +145,16 @@ marina-portfolio/
     └── utils/              ← funções auxiliares e texturas
 ```
 
-**Na maioria das vezes você só vai mexer em 3 lugares:**
+**Na maioria das vezes você só vai mexer em 4 lugares:**
 
-1. `src/data/level.js` → conteúdo (textos, recortes, links).
-2. `src/assets/cutouts/` → imagens.
-3. `index.html` → contatos do topo.
+1. `src/data/level.js` → conteúdo (textos, recortes, links, foto, partículas).
+2. `src/assets/cutouts/` e `src/assets/images/` → imagens.
+3. `index.html` → contatos do topo e textos de SEO.
+4. `public/` → favicon, prévia de compartilhamento e currículo.
+
+> Todos os arquivos de código têm comentários em português explicando cada função,
+> variável e evento. Antes de mudar algo, leia o cabeçalho do arquivo: ele tem uma lista
+> "Onde mexer" com os ajustes mais comuns.
 
 ---
 
@@ -659,6 +675,91 @@ Para trocar de serviço, só a função `call()` em `visitors.js` precisa mudar.
 
 ---
 
+### 5.18 Foto de perfil: miniatura, céu e janela "Sobre"
+
+**Arquivos:** `src/assets/images/profile.jpeg` (a foto), `PROFILE` em `src/data/level.js` (configuração),
+`src/ui/profile.js` (comportamento) e os blocos "Foto de perfil" em `src/styles/main.css` (aparência).
+
+A mesma foto aparece em três lugares:
+
+1. **Miniatura** no canto superior esquerdo (clicar abre a janela "Sobre a Marina").
+2. **Céu:** bem transparente, atrás do cenário, com os **olhos sempre visíveis** na tela.
+3. **Janela "Sobre a Marina":** foto maior, apresentação, easter egg da bike e contatos.
+
+**Passo a passo para colocar a foto:**
+
+1. Salve a foto como `src/assets/images/profile.jpeg` (ou `.jpg`/`.png`/`.webp`; nesse caso troque o nome em
+   `PROFILE.image`). Prefira o rosto bem visível e até 1600 px no maior lado.
+2. Abra `http://localhost:5173/?olhos`. Uma **mira vermelha** marca o ponto onde os olhos devem ficar.
+3. Em `level.js`, ajuste `eyes` até a mira ficar sobre os olhos:
+   ```js
+   eyes: { x: 0.5, y: 0.36 }, // 0 = esquerda/topo da FOTO, 1 = direita/base
+   ```
+   Salve e veja a página atualizar. Aumente `y` se a mira ficou acima dos olhos; diminua se ficou abaixo.
+4. Redimensione a janela e teste no modo celular (F12 → Ctrl + Shift + M): a mira continua sobre os olhos.
+5. Tire o `?olhos` do endereço quando terminar.
+
+| Quero… | O que mudar em `PROFILE` |
+|---|---|
+| Olhos em outro ponto da tela | `anchor: { x: 0.5, y: 0.3 }` (0.3 = a 30% da altura da janela) |
+| Foto mais ou menos visível no céu | `sky.opacity` (0.15 sutil … 0.4 forte) |
+| Foto sumindo mais cedo/tarde na parte de baixo | `sky.fadeFrom` (onde começa a sumir) e `sky.fadeTo` (onde já sumiu), frações da altura |
+| Foto "normal" em vez de só clarear o escuro | `sky.blend: 'normal'` (padrão `'screen'`) |
+| Texto alternativo e nome | `alt` e `name` |
+
+Enquanto a foto não existir, o jogo mostra um **retrato provisório** com olhos desenhados exatamente em `eyes`, e
+a janela "Sobre" avisa "Retrato provisório".
+
+---
+
+### 5.19 Partículas da bike
+
+**Arquivo de configuração:** `PARTICLES` em `src/data/level.js`. **Lógica:** `src/world/particles.js`.
+
+Enquanto a bike se move (arrastada ou no teclado), ela solta um rastro de "faíscas de papel" que encolhem e somem.
+
+| Quero… | O que mudar |
+|---|---|
+| Desligar o efeito | `enabled: false` |
+| Rastro mais denso / mais leve | `perMeter` (partículas por metro percorrido) |
+| Partículas durarem mais | `life: [0.5, 1.2]` (segundos, mínimo e máximo) |
+| Partículas maiores | `size: [0.22, 0.55]` (metros) |
+| Outras cores | `colors: [PALETTE.lilac, …]` |
+| Papel opaco em vez de brilho | `additive: false` |
+| Só soltar quando a bike está rápida | aumente `minSpeed` (m/s) |
+| Mudar o desenho (triângulo) | função `makeSparkTexture()` em `particles.js` |
+
+Quem ativou "reduzir movimento" no sistema recebe menos partículas automaticamente.
+
+---
+
+### 5.20 SEO, favicon e prévia ao compartilhar
+
+Tudo fica no `<head>` do `index.html`, em blocos comentados. Veja o passo a passo completo no
+[README, seção 4.1 (favicon) e 4.5 (SEO)](../README.md#41-como-alterar-o-favicon).
+
+Resumo:
+
+- **Título/descrição** que o Google mostra: `<title>` e `<meta name="description">`.
+- **Prévia no WhatsApp/LinkedIn:** tags `og:*` e `twitter:*` + a imagem `public/og-image.png` (1200×630).
+  Troque a imagem mantendo o nome. Teste em https://www.opengraph.xyz.
+- **Favicon:** troque `public/favicon.svg` e `public/apple-touch-icon.png` mantendo os nomes.
+- **Endereço do site mudou?** Procure `https://marinamicas.github.io/marina-portfolio/` em `index.html`,
+  `public/robots.txt` e `public/sitemap.xml` e troque em todos.
+
+---
+
+### 5.21 Easter egg da bicicleta
+
+A frase "A escolha da bicicleta não foi por acaso: é o meu veículo predileto e amo andar de bike!" fica em
+`TEXTS.bike` (`src/data/level.js`) e aparece:
+
+- na janela **"Sobre a Marina"** (miniatura da foto), em destaque lilás;
+- como **aviso** uma vez por visita, 1,5 s depois do primeiro arraste da bike. Para mudar o atraso ou
+  desligar, veja `maybeTellBikeStory()` em `src/main.js`.
+
+---
+
 ## 6. Testando antes de publicar
 
 Rode o projeto (`npm run dev`) e confira esta lista:
@@ -682,6 +783,9 @@ Rode o projeto (`npm run dev`) e confira esta lista:
 - [ ] Arrastar a bike até um recorte: câmera lenta, aproximação e tremida, e depois tudo volta ao normal.
 - [ ] No modo celular do F12: tocar na bike e arrastar, arrastar o cenário, pinça dá zoom, toque duplo volta ao normal.
 - [ ] Clicar 3 vezes seguidas no mapa abre o guia; "Não mostrar esta dica novamente" faz ele parar de aparecer.
+- [ ] A miniatura da foto aparece no canto superior esquerdo e abre a janela "Sobre a Marina" com a frase da bike.
+- [ ] A foto no céu está sutil e, com `?olhos` no endereço, a mira fica sobre os olhos em qualquer tamanho de tela.
+- [ ] Arrastar a bike solta um rastro de partículas que encolhem e somem.
 - [ ] O console (F12) não mostra erros em vermelho.
 
 Depois, gere a versão final e teste:
@@ -760,6 +864,10 @@ na lateral) mostra cada arquivo alterado; clique com o botão direito → **Desc
 | **sessionStorage** | Memória do navegador que dura enquanto a aba estiver aberta. |
 | **id** | Nome único de cada recorte, usado pelo inventário. |
 | **x / z** | Coordenadas no chão: `x` é esquerda/direita, `z` é frente/trás (negativo = mais longe do início). |
+| **Partículas** | Faíscas de papel que a bike solta ao se mover (configuração em `PARTICLES`). |
+| **Âncora dos olhos** | Ponto da tela onde os olhos da foto de perfil ficam sempre (`PROFILE.anchor`). |
+| **SEO** | Ajustes para o site aparecer bem no Google e nas prévias de compartilhamento. |
+| **Favicon** | Ícone da aba do navegador (`public/favicon.svg`). |
 | **Build** | Versão final otimizada do site, gerada na pasta `dist/`. |
 | **Deploy** | Publicar o site na internet. |
 | **Commit** | Um "ponto de salvamento" no histórico do Git. |

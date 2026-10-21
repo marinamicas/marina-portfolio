@@ -1,42 +1,62 @@
+# ==========================================================================
+# PUBLICAÇÃO AUTOMÁTICA NO GITHUB PAGES (GitHub Actions)
+#
+# Toda vez que um commit chega na branch `main`, o GitHub roda este arquivo:
+# instala o Node, gera a pasta dist/ (npm run build) e publica o conteúdo dela.
+# Também pode ser disparado à mão na aba Actions (workflow_dispatch).
+#
+# Pré-requisito (uma vez só): no repositório, Settings → Pages →
+# Build and deployment → Source: "GitHub Actions".
+#
+# Onde mexer:
+# - branches: [main] → qual branch dispara a publicação.
+# - node-version: 24 → versão do Node usada no build (mantenha igual à sua).
+# - path: dist → pasta gerada pelo Vite (vite.config.js → build.outDir).
+# ==========================================================================
 name: Deploy GitHub Pages
 
+# Quando rodar
 on:
   push:
-    branches: [main]
-  workflow_dispatch:
+    branches: [main] # a cada push na main
+  workflow_dispatch: # botão "Run workflow" na aba Actions
 
+# Permissões mínimas que o deploy no Pages exige
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: read # ler o código
+  pages: write # publicar no Pages
+  id-token: write # autenticação do deploy
 
+# Se dois pushes chegarem seguidos, o deploy mais antigo é cancelado (só o último vale)
 concurrency:
   group: pages
   cancel-in-progress: true
 
 jobs:
+  # 1ª etapa: gerar a pasta dist/
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v5 # baixa o código do repositório
+      - uses: actions/setup-node@v5 # instala o Node.js
         with:
           node-version: 24
-          cache: npm
+          cache: npm # guarda o node_modules entre execuções (build mais rápido)
       # Falha com mensagem clara se Settings → Pages → Source não estiver em "GitHub Actions"
       - uses: actions/configure-pages@v5
-      - run: npm ci
-      - run: npm run build
-      - uses: actions/upload-pages-artifact@v4
+      - run: npm ci # instala as dependências exatamente como no package-lock.json
+      - run: npm run build # gera dist/
+      - uses: actions/upload-pages-artifact@v4 # empacota dist/ para a etapa de deploy
         with:
           path: dist
 
+  # 2ª etapa: publicar o pacote gerado acima
   deploy:
-    needs: build
+    needs: build # só roda se o build deu certo
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url }} # endereço final do site (aparece na aba Actions)
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4

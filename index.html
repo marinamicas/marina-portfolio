@@ -1,71 +1,215 @@
 <!doctype html>
+<!--
+  ============================================================================
+  index.html — estrutura da página do portfólio gamificado de Marina Micas Jardim
+
+  O que tem aqui:
+  1. <head>: metadados de SEO (título, descrição, palavras-chave, autoria),
+     Open Graph (prévia no WhatsApp/LinkedIn/Facebook), Twitter Cards,
+     dados estruturados JSON-LD (Schema.org Person + CreativeWork),
+     favicon, theme-color e um CSS mínimo de segurança.
+  2. <body>: o <canvas> do mundo 3D, a camada da foto no "céu", o HUD
+     (miniatura da foto, contatos, barra de conhecimento, botões), a janela
+     flutuante (modal), a tela inicial, o aviso de WebGL e o <script> do jogo.
+
+  Quem faz a página funcionar é src/main.js (carregado no fim do <body>).
+  O CSS fica em src/styles/main.css (importado pelo main.js).
+
+  Onde mexer:
+  - Links de contato → <nav class="hud-links"> (troque SEU-PERFIL, e-mail e número).
+  - Textos de SEO → bloco "SEO" no <head>. Mantenha o endereço do site igual em
+    canonical, og:url, twitter e no JSON-LD (procure por SITE_URL nos comentários).
+  - Favicon → troque public/favicon.svg e public/apple-touch-icon.png (ver README).
+  - Imagem de prévia ao compartilhar → public/og-image.png (1200×630).
+  ============================================================================
+-->
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Marina Micas Jardim — Portfólio</title>
-  <meta name="description" content="Portfólio gamificado de Marina Micas Jardim: UX/UI Design, Dados, Arte e Tecnologia." />
+  <!-- Viewport: 1 pixel CSS = 1 pixel do aparelho; viewport-fit=cover usa a tela toda em celulares com "notch" -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+  <!-- ===================== SEO: título e descrição ===================== -->
+  <!-- O título aparece na aba do navegador e como link azul no Google (ideal: até ~60 caracteres antes do "|") -->
+  <title>Marina Micas Jardim — Portfólio gamificado | UX/UI Design, Dados, Arte e Tecnologia</title>
+  <!-- Descrição mostrada pelos buscadores abaixo do título (ideal: 120 a 160 caracteres) -->
+  <meta name="description" content="Pedale por uma colagem 3D e descubra a trajetória de Marina Micas Jardim: UX/UI Designer com 6 anos de experiência em transição para dados, unindo arte e tecnologia." />
+  <!-- Palavras-chave: pouco usadas pelo Google hoje, mas ajudam outros buscadores e organizam o foco da página -->
+  <meta name="keywords" content="Marina Micas Jardim, Marina Micas, portfólio, portfólio gamificado, UX/UI Designer, UX Design, UI Design, Product Design, Ciência de Dados, Engenharia de Dados, Análise de Dados, arte e tecnologia, Three.js, Rio de Janeiro" />
+  <meta name="author" content="Marina Micas Jardim" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <!-- Endereço oficial da página (evita conteúdo duplicado com/sem "index.html"). SITE_URL: troque se o site mudar de endereço -->
+  <link rel="canonical" href="https://marinamicas.github.io/marina-portfolio/" />
+  <meta name="application-name" content="Portfólio Marina Micas" />
+  <meta name="color-scheme" content="dark" />
+
+  <!-- ===================== Open Graph (WhatsApp, LinkedIn, Facebook, Telegram) ===================== -->
+  <!-- Esses serviços montam o "cartão de prévia" do link com estas tags. A imagem PRECISA ter endereço completo (https://…) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="pt_BR" />
+  <meta property="og:site_name" content="Portfólio de Marina Micas Jardim" />
   <meta property="og:title" content="Marina Micas Jardim — Portfólio gamificado" />
-  <meta property="og:description" content="Pedale pela trajetória de Marina Micas: Experiências e Formações em uma colagem digital 3D." />
-  <meta property="og:image" content="./og-image.jpg" />
-  <meta name="theme-color" content="#0d0b10" />
+  <meta property="og:description" content="Pedale pela trajetória de Marina Micas: UX/UI Design, Dados, Arte e Tecnologia em uma colagem digital 3D interativa." />
+  <meta property="og:url" content="https://marinamicas.github.io/marina-portfolio/" />
+  <!-- Imagem de prévia: public/og-image.png (1200×630 px, menos de 1 MB). Troque o arquivo mantendo o nome -->
+  <meta property="og:image" content="https://marinamicas.github.io/marina-portfolio/og-image.png" />
+  <meta property="og:image:secure_url" content="https://marinamicas.github.io/marina-portfolio/og-image.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Colagem digital roxa e lilás do portfólio gamificado de Marina Micas Jardim" />
+
+  <!-- ===================== Twitter / X Cards ===================== -->
+  <!-- summary_large_image = cartão com imagem grande em cima do título -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Marina Micas Jardim — Portfólio gamificado" />
+  <meta name="twitter:description" content="Pedale pela trajetória de Marina Micas: UX/UI Design, Dados, Arte e Tecnologia em uma colagem digital 3D interativa." />
+  <meta name="twitter:image" content="https://marinamicas.github.io/marina-portfolio/og-image.png" />
+  <meta name="twitter:image:alt" content="Colagem digital roxa e lilás do portfólio gamificado de Marina Micas Jardim" />
+
+  <!-- ===================== Favicon e cor do tema ===================== -->
+  <!-- SVG: nítido em qualquer tamanho (navegadores modernos). PNG 180×180: ícone ao "adicionar à tela inicial" no iPhone/iPad -->
   <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-  <!-- Garante que avisos escondidos continuem escondidos mesmo se o CSS principal não carregar -->
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+  <!-- Cor da barra do navegador no celular (Android/Chrome) e do PWA -->
+  <meta name="theme-color" content="#0d0b10" />
+
+  <!-- ===================== Dados estruturados (Schema.org, formato JSON-LD) ===================== -->
+  <!--
+    Lidos pelo Google para entender QUEM é a pessoa (Person) e O QUE é a página (CreativeWork).
+    - "@id" é um identificador interno: o CreativeWork aponta para a Person por ele.
+    - Troque os endereços de "sameAs" pelos seus perfis reais (os mesmos do header).
+    - Teste em https://validator.schema.org ou https://search.google.com/test/rich-results
+  -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Person",
+        "@id": "https://marinamicas.github.io/marina-portfolio/#marina",
+        "name": "Marina Micas Jardim",
+        "alternateName": "Marina Micas",
+        "jobTitle": "UX/UI Developer",
+        "description": "UX/UI Designer com cerca de 6 anos de experiência e formação em informática, em busca de novos desafios no universo de dados (engenharia, ciência e análise), unindo arte com tecnologia.",
+        "url": "https://marinamicas.github.io/marina-portfolio/",
+        "image": "https://marinamicas.github.io/marina-portfolio/og-image.png",
+        "knowsAbout": ["UX Design", "UX/UI Developer", "UI Design", "Product Design", "Ciência de Dados", "Engenharia de Dados", "Análise de Dados", "Arte e Tecnologia"],
+        "knowsLanguage": "pt-BR",
+        "sameAs": [
+          "https://www.linkedin.com/in/marinamicas/",
+          "https://github.com/marinamicas"
+        ]
+      },
+      {
+        "@type": "CreativeWork",
+        "@id": "https://marinamicas.github.io/marina-portfolio/#portfolio",
+        "name": "Portfólio gamificado de Marina Micas Jardim",
+        "headline": "Marina Micas Jardim — Portfólio gamificado",
+        "description": "Portfólio interativo em 3D: o visitante pedala uma bicicleta de papel por uma colagem digital e atropela recortes para descobrir as experiências e formações de Marina Micas Jardim.",
+        "url": "https://marinamicas.github.io/marina-portfolio/",
+        "mainEntityOfPage": "https://marinamicas.github.io/marina-portfolio/",
+        "image": "https://marinamicas.github.io/marina-portfolio/og-image.png",
+        "thumbnailUrl": "https://marinamicas.github.io/marina-portfolio/og-image.png",
+        "inLanguage": "pt-BR",
+        "genre": ["Portfólio interativo", "Jogo para navegador", "Colagem digital"],
+        "keywords": "portfólio gamificado, UX/UI Design, dados, arte e tecnologia, Three.js, WebGL",
+        "dateCreated": "2026-10-20",
+        "datePublished": "2026-10-21",
+        "dateModified": "2026-10-21",
+        "isAccessibleForFree": true,
+        "author": { "@id": "https://marinamicas.github.io/marina-portfolio/#marina" },
+        "creator": { "@id": "https://marinamicas.github.io/marina-portfolio/#marina" },
+        "copyrightHolder": { "@id": "https://marinamicas.github.io/marina-portfolio/#marina" },
+        "about": { "@id": "https://marinamicas.github.io/marina-portfolio/#marina" }
+      }
+    ]
+  }
+  </script>
+
+  <!-- CSS de segurança: garante que elementos escondidos continuem escondidos mesmo se o CSS principal demorar/falhar -->
   <style>.hidden { display: none !important; }</style>
 </head>
 <body>
+  <!-- Mundo 3D: o Three.js desenha tudo neste canvas (criado em src/core/stage.js) -->
   <canvas class="webgl" aria-label="Mundo 3D do portfólio"></canvas>
 
-  <!-- HUD: header fixo com recortes de contato -->
+  <!--
+    Foto de perfil no "céu": camada fixa na janela, por cima do canvas e abaixo do HUD,
+    em baixa opacidade e modo de mistura 'screen' (só clareia o que está escuro, parecendo
+    um fundo). src/ui/profile.js preenche o <img> e posiciona a foto de modo que os olhos
+    fiquem sempre no ponto PROFILE.anchor da tela (configuração em src/data/level.js).
+    Começa escondida (.hidden) e aparece quando a foto está pronta. pointer-events: none no CSS.
+  -->
+  <div class="sky-photo hidden" aria-hidden="true"><img alt="" decoding="async" /></div>
+
+  <!-- HUD: miniatura da foto de perfil (canto superior esquerdo). Clique abre a janela "Sobre a Marina" -->
+  <button class="hud-avatar" type="button" aria-label="Sobre a Marina Micas" title="Sobre a Marina">
+    <img alt="" decoding="async" />
+  </button>
+
+  <!-- HUD: header fixo com recortes de contato. Os mesmos links são copiados para as janelas "Zerou", "Contatos" e "Sobre" -->
   <header class="hud-header">
     <nav class="hud-links" aria-label="Contatos">
-      <a href="https://www.linkedin.com/in/SEU-PERFIL" aria-label="LinkedIn">
-        <img src="/src/assets/ui/icons/linkedin.svg" alt="" /><span>LinkedIn</span>
+      <!-- Troque SEU-PERFIL pelo final do endereço do seu LinkedIn -->
+      <a href="https://www.linkedin.com/in/marinamicas/" aria-label="LinkedIn">
+        <img src="/src/assets/ui/icons/linkedin.png" alt="" /><span>LinkedIn</span>
       </a>
-      <a href="https://github.com/SEU-USUARIO" aria-label="GitHub">
-        <img src="/src/assets/ui/icons/github.svg" alt="" /><span>GitHub</span>
+      <a href="https://github.com/marinamicas" aria-label="GitHub">
+        <img src="/src/assets/ui/icons/github.png" alt="" /><span>GitHub</span>
       </a>
-      <a href="mailto:seu-email@exemplo.com" aria-label="E-mail">
-        <img src="/src/assets/ui/icons/email.svg" alt="" /><span>E-mail</span>
+      <!-- Mantenha o "mailto:" e troque só o e-mail -->
+      <a href="mailto:marinamicas@gmail.com" aria-label="E-mail">
+        <img src="/src/assets/ui/icons/email.png" alt="" /><span>E-mail</span>
       </a>
-      <a href="https://wa.me/55DDDNUMERO" aria-label="WhatsApp">
-        <img src="/src/assets/ui/icons/whatsapp.svg" alt="" /><span>WhatsApp</span>
+      <!-- WhatsApp: 55 + DDD + número, só dígitos (ex.: https://wa.me/5521999998888) -->
+      <a href="https://wa.me/5521985487666" aria-label="WhatsApp">
+        <img src="/src/assets/ui/icons/whatsapp.png" alt="" /><span>WhatsApp</span>
       </a>
-      <a href="./docs/curriculo-marina-micas.pdf" aria-label="Currículo em PDF">
-        <img src="/src/assets/ui/icons/cv.svg" alt="" /><span>Currículo (PDF)</span>
+      <!-- Currículo: coloque o PDF em public/docs/curriculo-marina-micas.pdf -->
+      <a href="./docs/curriculo-marina-micas.pdf" aria-label="Currículo em PDF" target="_blank">
+        <img src="/src/assets/ui/icons/curriculo.png" alt="" /><span>Currículo (PDF)</span>
       </a>
     </nav>
   </header>
 
+  <!-- HUD: barra "Conhecimento sobre Marina" (atualizada por src/ui/screens.js) + contador de visitantes -->
   <div class="hud-progress" aria-live="polite">
     <span id="progress-label">Conhecimento sobre Marina: 0%</span>
     <div class="bar"><div id="progress-fill"></div></div>
+    <!-- [data-visitors]: todos os elementos com este atributo recebem o texto do contador -->
     <small class="visitors" data-visitors></small>
   </div>
 
+  <!-- HUD: botões de ação (canto inferior esquerdo). Os cliques são tratados em src/ui/screens.js e src/ui/guide.js -->
   <div class="hud-actions">
     <div class="rewind">
+      <!-- Abre o menu com as duas opções de rebobinar -->
       <button id="btn-rewind" aria-haspopup="true" aria-expanded="false">⟲ Rebobinar</button>
       <div class="rewind-menu" role="menu">
         <button id="btn-rewind-fork" role="menuitem">⟲ Para a bifurcação</button>
         <button id="btn-rewind-start" role="menuitem">⟲⟲ Para o início</button>
       </div>
     </div>
+    <!-- #inventory-count mostra "conquistados/total" -->
     <button id="btn-inventory">✂ Inventário <span id="inventory-count">0/0</span></button>
     <button id="btn-help" aria-label="Como navegar">? Ajuda</button>
     <button id="btn-reset">↺ Resetar</button>
   </div>
 
+  <!-- Aviso rápido (toast) roxo embaixo da tela. Texto e animação em src/ui/effects.js -->
   <div id="toast" role="status"></div>
 
+  <!-- Janela flutuante única, reaproveitada por todas as telas (item, inventário, zerou, game over, sobre…). Controle em src/ui/modal.js -->
   <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
     <div class="modal-card">
       <button class="modal-close" aria-label="Fechar">×</button>
+      <!-- O HTML de cada tela é injetado aqui -->
       <div id="modal-content"></div>
     </div>
   </div>
 
-  <!-- Tela inicial -->
+  <!-- Tela inicial: cobre tudo até o clique em "Pedalar". O botão só habilita quando os recortes carregam (src/main.js) -->
   <section id="start-screen">
     <div class="start-card">
       <p class="tag">Portfólio gamificado</p>
@@ -73,18 +217,30 @@
       <p>Arte + tecnologia. Leve a bike pelas ruas de Experiências e Formações e atropele os recortes para desvendar a trajetória.</p>
       <button id="btn-start" class="btn" disabled>Recortando papéis…</button>
       <small class="visitors" data-visitors></small>
-      <!-- Dica de controles: o CSS mostra só a versão do tipo de tela do visitante -->
+      <!-- Dica de controles: o CSS mostra só a versão do tipo de tela do visitante (dedo x mouse) -->
       <small class="only-desktop">Clique na bike e arraste até os recortes · arraste o cenário para olhar em volta · roda do mouse para zoom</small>
       <small class="only-touch">Toque na bike e arraste até os recortes · arraste o cenário para olhar em volta · pinça para zoom</small>
     </div>
   </section>
 
+  <!-- Mostrado por src/core/stage.js quando o navegador não consegue criar o WebGL -->
   <div id="no-webgl" class="hidden">
     <p>Seu navegador não conseguiu iniciar o WebGL, necessário para o mundo 3D.<br />
       Tente ativar a <strong>aceleração de hardware</strong> nas configurações do navegador ou abrir em outro navegador.<br />
       Você também pode usar os contatos no topo da página para falar com a Marina.</p>
   </div>
 
+  <!-- Sem JavaScript (e para robôs mais simples): resumo em texto da página -->
+  <noscript>
+    <section style="padding: 24px; max-width: 640px; margin: 0 auto; line-height: 1.5">
+      <h2>Marina Micas Jardim — UX/UI Designer em transição para dados</h2>
+      <p>Este portfólio é um jogo em 3D que precisa de JavaScript para funcionar. Ative o JavaScript ou use os links de contato:
+        <a href="https://www.linkedin.com/in/SEU-PERFIL">LinkedIn</a> · <a href="https://github.com/marinamicas">GitHub</a> ·
+        <a href="mailto:seu-email@exemplo.com">E-mail</a>.</p>
+    </section>
+  </noscript>
+
+  <!-- Ponto de entrada do jogo (módulo ES). O Vite resolve o caminho no build -->
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>

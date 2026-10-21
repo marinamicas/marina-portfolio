@@ -1,5 +1,12 @@
+# Arquivos e pastas que o Git NÃO deve guardar no repositório.
+# (Tudo aqui é gerado automaticamente ou é específico do seu computador.)
+
+# Dependências instaladas pelo `npm install` (recriadas a partir do package.json)
 node_modules
+# Versão final gerada pelo `npm run build` (o GitHub Actions gera a dele na hora de publicar)
 dist
+# Arquivos locais de configuração (ex.: .env.local), que não devem ir para o GitHub
 *.local
+# Arquivos de sistema do macOS e do Windows
 .DS_Store
 Thumbs.db

@@ -1,18 +1,32 @@
-/*
-  Detector de gestos inválidos.
+/* ==========================================================================
+   DETECTOR DE GESTOS INVÁLIDOS
 
-  Um gesto isolado "errado" (um clique solto, uma tecla qualquer) não deve
-  incomodar ninguém. Por isso cada tipo de gesto tem um limite: só quando ele
-  se repete X vezes dentro de uma janela de tempo é que consideramos que a
-  pessoa está tentando navegar de um jeito que o site não suporta.
+   Papel deste arquivo:
+   - Perceber quando a pessoa tenta navegar de um jeito que o site não suporta
+     (toques soltos esperando que a bike vá até lá, botão direito, três dedos,
+     segurar o dedo parado, deslizar para os lados, teclas sem função).
+   - Um gesto isolado "errado" (um clique solto, uma tecla qualquer) não deve
+     incomodar ninguém. Por isso cada tipo de gesto tem um limite: só quando ele
+     se repete X vezes dentro de uma janela de tempo é que consideramos que a
+     pessoa está tentando navegar de um jeito que o site não suporta.
+   - Este arquivo NÃO mostra nada na tela: quem quiser reagir (ex.: o modal
+     guia em src/ui/guide.js) se inscreve com onInvalidGesture().
 
-  Quem quiser reagir (ex.: o modal guia) se inscreve com onInvalidGesture().
-*/
+   Dependências: nenhuma.
+   Quem registra gestos: pointerControls.js (toques, cliques, dedos, segurar),
+   input.js (teclas e rolagem horizontal). Quem liga/desliga: main.js
+   (setDetectorGuard). Quem reage: guide.js (onInvalidGesture).
+
+   Onde mexer:
+   - RULES: quantas repetições (threshold) em quanto tempo (windowMs) disparam
+     o aviso de cada gesto. Para desligar um gesto, apague a linha dele.
+   ========================================================================== */
 
 /**
  * Regras por tipo de gesto.
- * - threshold: quantas repetições disparam o aviso
- * - windowMs:  em quanto tempo essas repetições precisam acontecer
+ * - threshold: quantas repetições disparam o aviso (1 = dispara na primeira vez)
+ * - windowMs:  em quanto tempo essas repetições precisam acontecer (ms; 0 = irrelevante quando threshold é 1)
+ * Para o aviso aparecer MENOS, aumente threshold ou diminua windowMs.
  */
 export const RULES = {
   tap: { threshold: 3, windowMs: 3000 }, // toques rápidos esperando que a bike vá até o ponto
@@ -25,21 +39,33 @@ export const RULES = {
   'unsupported-key': { threshold: 4, windowMs: 3000 }, // teclas que não fazem nada no jogo
 }
 
-const history = new Map() // tipo de gesto → lista de horários (ms) das últimas ocorrências
-const listeners = []
-let enabled = () => true // função que diz se o detector deve agir agora (definida pelo jogo)
+const history = new Map() // tipo de gesto → lista de horários (ms, performance.now()) das últimas ocorrências
+const listeners = [] // funções inscritas com onInvalidGesture(); recebem { kind, device }
+let enabled = () => true // função que diz se o detector deve agir agora (definida pelo jogo via setDetectorGuard)
 
-/** Define quando o detector está ativo (ex.: só com o jogo rodando e sem janelas abertas). */
+/**
+ * Define quando o detector está ativo (ex.: só com o jogo rodando e sem janelas abertas).
+ * main.js passa `() => playing && !ui.isBlocked() && !bike.locked`.
+ * @param {() => boolean} fn
+ */
 export function setDetectorGuard(fn) {
   enabled = fn
 }
 
-/** Inscreve uma função que recebe { kind, device } quando um gesto inválido é confirmado. */
+/**
+ * Inscreve uma função que recebe { kind, device } quando um gesto inválido é confirmado.
+ * `kind` é uma chave de RULES; `device` é 'touch' ou 'desktop'.
+ * @param {(info: {kind: string, device: string}) => void} fn
+ */
 export function onInvalidGesture(fn) {
   listeners.push(fn)
 }
 
-/** Esquece as ocorrências de um tipo (ex.: o toque virou um toque duplo válido). */
+/**
+ * Esquece as ocorrências de um tipo (ex.: o toque virou um toque duplo válido).
+ * Assim o primeiro toque de um toque duplo não conta como "toque solto".
+ * @param {string} kind - chave de RULES
+ */
 export function forgetGesture(kind) {
   history.delete(kind)
 }
@@ -47,6 +73,15 @@ export function forgetGesture(kind) {
 /**
  * Registra uma ocorrência do gesto `kind`, feita no dispositivo `device`
  * ('touch' ou 'desktop'). Retorna true se o aviso foi disparado.
+ * Como funciona:
+ * 1. Se o detector está desligado ou o gesto não tem regra, ignora.
+ * 2. Mantém só as ocorrências recentes (dentro de windowMs) e acrescenta a atual.
+ * 3. Se ainda não chegou em threshold, só guarda e devolve false.
+ * 4. Se chegou: zera o histórico desse gesto (para não disparar de novo no
+ *    próximo toque) e avisa todos os inscritos.
+ * @param {string} kind - chave de RULES
+ * @param {'touch'|'desktop'} device
+ * @returns {boolean}
  */
 export function registerGesture(kind, device) {
   if (!enabled()) return false

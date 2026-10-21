@@ -7,19 +7,46 @@ import { loadVisitors, visitorsSinceLabel } from '../core/visitors.js'
 import { linksHTML } from './pins.js'
 import { escapeHTML } from '../utils/helpers.js'
 
-/*
-  Telas e HUD: barra de conhecimento, contador do inventário, janelas de
-  item, inventário, zerou, game over, contatos e "tentar novamente".
-*/
+/* ==========================================================================
+   TELAS E HUD
 
-// Atalho para document.querySelector
+   Responsável por tudo o que é "janela" e por manter o HUD atualizado:
+   - HUD: barra "Conhecimento sobre Marina: X%" e contador "X/Y" do Inventário.
+   - Janelas (abertas em ui.open, src/ui/modal.js): recorte atropelado, "Você
+     zerou!", "Como quer recomeçar?", Game Over, confirmação do Resetar,
+     Contatos e Inventário.
+   - Aviso ao fechar/recarregar a aba sem 100% (beforeunload → Game Over).
+   - Contador de visitantes (texto nos elementos [data-visitors]).
+   - Cliques nos botões das janelas (data-action) e do HUD (Rebobinar,
+     Inventário, Resetar).
+
+   Dependências: level.js (textos, itens, grupos), state.js (progresso),
+   timeMachine.js (rebobinar/viagens), modal.js, visitors.js, pins.js (linksHTML).
+   Usado por: main.js (updateHUD, openItem, maybeWin, enableExitGuard,
+   initVisitorCounter) e profile.js (contactsHTML).
+
+   Onde mexer:
+   - Textos dos botões/títulos das janelas → funções show*() abaixo.
+   - Textos longos → TEXTS em src/data/level.js.
+   - O que cada botão faz → switch (el.dataset.action) no fim do arquivo.
+   - Desligar o aviso ao sair → apague enableExitGuard(...) em main.js.
+   ========================================================================== */
+
+/** Atalho para document.querySelector (menos digitação). */
 const $ = (s) => document.querySelector(s)
 
 /* ---------------- HUD ---------------- */
+/** Elementos do HUD: rótulo da porcentagem, preenchimento da barra e contador do botão Inventário. */
 const hud = { label: $('#progress-label'), fill: $('#progress-fill'), count: $('#inventory-count') }
 
+/** Quantidade de recortes na última atualização do HUD: serve para animar só quando entra um novo. */
 let lastCount = state.collected.length
 
+/**
+ * Atualiza a porcentagem, o contador X/Y e a largura da barra. Se entrou um recorte novo,
+ * o contador dá um "pulo" (escala 1.8 → 1). Chamada automaticamente a cada mudança de
+ * estado (onStateChange) e manualmente por main.js na inicialização.
+ */
 export function updateHUD() {
   const pct = Math.round(progress() * 100)
   hud.label.textContent = `Conhecimento sobre Marina: ${pct}%`
@@ -31,13 +58,22 @@ export function updateHUD() {
   lastCount = state.collected.length
   gsap.to(hud.fill, { width: `${pct}%`, duration: 0.6, ease: 'power2.out' })
 }
-onStateChange(updateHUD)
+onStateChange(updateHUD) // toda vez que o progresso muda (collect, markLink, reset…), o HUD acompanha
 
 /* ---------------- Janelas ---------------- */
-// Reaproveita os contatos do topo da página dentro das janelas
-const contactsHTML = () => `<div class="contact-list">${$('.hud-links').innerHTML}</div>`
+/**
+ * HTML com os contatos, copiado do header da página (<nav class="hud-links">).
+ * Assim os links só precisam ser trocados em um lugar (index.html).
+ * Usado nas janelas "Você zerou!", "Contatos" e "Sobre a Marina" (profile.js).
+ * @returns {string}
+ */
+export const contactsHTML = () => `<div class="contact-list">${$('.hud-links').innerHTML}</div>`
 
-/** Janela de um recorte atropelado: categoria, título, texto e links "saiba mais". */
+/**
+ * Janela de um recorte atropelado: categoria, título, texto e links "saiba mais".
+ * Ao fechar, verifica se foi o último recorte (maybeWin).
+ * @param {object} item item de ITEMS (level.js)
+ */
 export function openItem(item) {
   ui.open(
     `<p class="tag">${GROUPS[item.group].label}</p>
@@ -48,13 +84,17 @@ export function openItem(item) {
   )
 }
 
-/** Mostra "zerou" uma única vez, quando todos os recortes foram atropelados. */
+/**
+ * Mostra "Você zerou!" uma única vez, quando todos os recortes foram atropelados.
+ * `state.won` garante que não reapareça ao recarregar a página.
+ */
 export function maybeWin() {
   if (state.won || !isComplete()) return
   markWon()
   showWin()
 }
 
+/** Janela "Você zerou!": texto de TEXTS.win, contatos e botão "Jogar de novo". */
 export function showWin() {
   ui.open(
     `<p class="tag">100% da trajetória</p><h2>Você zerou! 🏁</h2><p>${TEXTS.win}</p>${contactsHTML()}
@@ -62,7 +102,10 @@ export function showWin() {
   )
 }
 
-/** Tentar novamente: pergunta se o inventário deve ser apagado ou mantido. */
+/**
+ * Tentar novamente: pergunta se o inventário deve ser apagado ou mantido.
+ * Com o inventário vazio não há o que perguntar: só volta ao início.
+ */
 export function showRetryChoice() {
   if (!state.collected.length) return rewind('start') // nada a perder: só volta ao início
   ui.open(
@@ -91,7 +134,7 @@ export function showGameOver() {
   )
 }
 
-/** Botão Resetar: confirma antes de apagar todo o inventário e recomeçar do zero. */
+/** Botão ↺ Resetar: confirma antes de apagar todo o inventário e recomeçar do zero. */
 export function showResetConfirm() {
   const n = state.collected.length
   ui.open(
@@ -105,12 +148,17 @@ export function showResetConfirm() {
   )
 }
 
-/** Janela só com os contatos. */
+/** Janela só com os contatos (aberta pelo Game Over → "Ir aos contatos"). */
 export function showContacts() {
   ui.open(`<h2>Contatos</h2><p>Vamos conversar e compartilhar conhecimentos?</p>${contactsHTML()}`)
 }
 
-/** Lista de recortes: conquistados (clicáveis para viajar) e bloqueados. */
+/**
+ * Inventário: lista todos os recortes. Conquistados (.got) viram botões que levam a bike
+ * até eles (data-travel); os outros (.locked) aparecem como "???" desabilitados.
+ * Mostra também se o "saiba mais" de cada um já foi visitado e, se houver um ponto de
+ * retorno (viagem anterior), o botão "Voltar ao ponto anterior".
+ */
 export function showInventory() {
   const rows = ITEMS.map((it) => {
     const got = state.collected.includes(it.id)
@@ -135,29 +183,40 @@ export function showInventory() {
   que o aviso fecha e o jogo mostra o Game Over. Se ela sair, a página descarrega
   e o timer nunca roda. Com o inventário 100% completo, nada é bloqueado.
 */
+/** Função que diz se o aviso de saída vale agora (definida por main.js: só depois de "Pedalar"). */
 let exitGuardActive = () => false
 
-/** Liga o aviso de saída; `isActive` diz se ele vale agora (ex.: só depois de começar a jogar). */
+/**
+ * Liga o aviso de saída.
+ * @param {() => boolean} isActive diz se ele vale agora (ex.: só depois de começar a jogar)
+ */
 export function enableExitGuard(isActive) {
   exitGuardActive = isActive
 }
 
+// beforeunload: disparado quando a aba vai fechar/recarregar. preventDefault + returnValue
+// fazem o navegador perguntar "Sair do site?". O setTimeout só roda se a pessoa ficar.
 addEventListener('beforeunload', (e) => {
   if (!exitGuardActive() || isComplete()) return
   e.preventDefault()
   e.returnValue = '' // navegadores mais antigos exigem returnValue para mostrar o aviso
   setTimeout(() => {
     if (!isComplete()) showGameOver()
-  }, 400)
+  }, 400) // 400 ms: tempo para o aviso nativo fechar antes do Game Over aparecer
 })
 
 /* ---------------- Contador de visitantes ----------------
   Aparece embaixo da barra de conhecimento e na tela inicial (elementos com data-visitors).
 */
+/** Formata números no padrão brasileiro (1.234). */
 const formatNumber = (n) => n.toLocaleString('pt-BR')
+/** Escreve o mesmo texto em todos os elementos [data-visitors] da página. */
 const renderVisitors = (text) => document.querySelectorAll('[data-visitors]').forEach((el) => (el.textContent = text))
 
-/** Registra a visita e mostra "Visitantes: X únicos · Y visualizações (desde DD/MM/AAAA)". */
+/**
+ * Registra a visita e mostra "Visitantes: X únicos · Y visualizações (desde DD/MM/AAAA)".
+ * Enquanto carrega mostra "…"; se o serviço falhar, "indisponível no momento".
+ */
 export function initVisitorCounter() {
   const since = visitorsSinceLabel()
   renderVisitors(`Visitantes: … (desde ${since})`)
@@ -167,20 +226,25 @@ export function initVisitorCounter() {
 }
 
 /* ---------------- Eventos ---------------- */
+// Um único listener para TODOS os botões das janelas (delegação): o conteúdo da janela é
+// recriado a cada abertura, então não dá para registrar listener botão a botão.
+// - data-link-id → marca "saiba mais" visitado (o visualizador abre o link por conta própria)
+// - data-travel  → leva a bike até o recorte
+// - data-action  → ações nomeadas (switch abaixo). Para criar um botão novo, adicione um case.
 ui.content.addEventListener('click', (e) => {
   const el = e.target.closest('[data-action],[data-travel],[data-link-id]')
   if (!el) return
   if (el.dataset.linkId) return markLink(el.dataset.linkId)
   if (el.dataset.travel) return travelTo(el.dataset.travel)
   switch (el.dataset.action) {
-    case 'retry':
+    case 'retry': // "Tentar novamente" / "Jogar de novo"
       showRetryChoice()
       break
-    case 'restart-keep':
+    case 'restart-keep': // volta ao início mantendo o inventário
       rewind('start')
       break
-    case 'restart-reset':
-    case 'confirm-reset':
+    case 'restart-reset': // "Resetar tudo" da pergunta de recomeço
+    case 'confirm-reset': // "Sim, resetar tudo" do botão ↺ Resetar
       rewind('start', { fresh: true }) // apaga o inventário e recomeça do zero
       break
     case 'close':
@@ -189,7 +253,7 @@ ui.content.addEventListener('click', (e) => {
     case 'contacts':
       showContacts()
       break
-    case 'return':
+    case 'return': // "Voltar ao ponto anterior" do inventário
       returnToPrevious()
       break
   }
@@ -197,6 +261,7 @@ ui.content.addEventListener('click', (e) => {
 
 // Menu do botão Rebobinar (abre/fecha; fecha ao clicar fora)
 const rewindBox = $('.rewind')
+/** Abre/fecha o menu (sem argumento, inverte o estado atual) e atualiza aria-expanded para leitores de tela. */
 const toggleRewindMenu = (open = !rewindBox.classList.contains('open')) => {
   rewindBox.classList.toggle('open', open)
   $('#btn-rewind').setAttribute('aria-expanded', String(open))
@@ -210,12 +275,12 @@ $('#btn-rewind-start').addEventListener('click', () => {
   toggleRewindMenu(false)
   rewind('start')
 })
+// Qualquer toque/clique fora do menu Rebobinar fecha o menu
 document.addEventListener('pointerdown', (e) => {
   if (!rewindBox.contains(e.target)) toggleRewindMenu(false)
 })
 $('#btn-inventory').addEventListener('click', showInventory)
 $('#btn-reset').addEventListener('click', showResetConfirm)
 
-// Botões do HUD não devem "roubar" o teclado da bike
+// Botões do HUD não devem "roubar" o teclado da bike: depois do clique, tiram o foco de si mesmos
 document.querySelectorAll('.hud-actions button').forEach((b) => b.addEventListener('click', () => b.blur()))
-
