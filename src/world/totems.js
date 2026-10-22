@@ -3,9 +3,10 @@ import * as CANNON from 'cannon-es'
 import gsap from 'gsap'
 import { scene, billboards } from '../core/stage.js'
 import { world } from '../core/physics.js'
-import { GROUPS, ITEMS } from '../data/level.js'
+import { GROUPS, ITEMS, TEXTS } from '../data/level.js'
 import { clamp, distToSegment, rand } from '../utils/helpers.js'
-import { applyCutout, makeCutoutTexture, makeTextPlane } from '../utils/textures.js'
+import { applyCutout, makeCutoutTexture, makeProfileCardTexture, makeTextPlane } from '../utils/textures.js'
+import { PHOTO_URL } from '../utils/profileImage.js'
 import { bike } from './bike.js'
 
 /* ==========================================================================
@@ -63,17 +64,28 @@ function createTotem(item, index) {
 
   const totem = { item, mesh, material, w, h, baseY, phase: index, alive: true, caption: null }
 
-  applyCutout(
-    material,
-    item.image,
-    () => makeCutoutTexture({ title: item.title, subtitle: item.subtitle, color: GROUPS[item.group].color }),
-    (tex) => {
-      // mantém a altura e ajusta a largura à proporção do recorte real
-      totem.w = (h * tex.image.width) / tex.image.height
-      mesh.geometry.dispose()
-      mesh.geometry = new THREE.PlaneGeometry(totem.w, h)
-    },
-  )
+  if (item.card === 'profile') {
+    // Cartão desenhado pelo jogo com a foto de perfil (primeiro recorte, "Sobre"), no mesmo
+    // visual dos cartões das Experiências. Usa exatamente o tamanho `size` do item.
+    material.map = makeProfileCardTexture({
+      title: item.title,
+      text: TEXTS.introCard,
+      tags: [item.subtitle, 'UX/UI Design', 'Dados', 'Arte + Tecnologia'],
+      photoUrl: PHOTO_URL,
+    })
+  } else {
+    applyCutout(
+      material,
+      item.image,
+      () => makeCutoutTexture({ title: item.title, subtitle: item.subtitle, color: GROUPS[item.group].color }),
+      (tex) => {
+        // mantém a altura e ajusta a largura à proporção do recorte real
+        totem.w = (h * tex.image.width) / tex.image.height
+        mesh.geometry.dispose()
+        mesh.geometry = new THREE.PlaneGeometry(totem.w, h)
+      },
+    )
+  }
 
   if (item.reveal) {
     // texto revelado "abaixo" do recorte quando ele é destruído

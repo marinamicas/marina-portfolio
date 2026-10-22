@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import gsap from 'gsap'
-import { camera } from '../core/stage.js'
+import { camera, viewport } from '../core/stage.js'
 import { markLink } from '../core/state.js'
 import { GROUPS, ROAD_WIDTH } from '../data/level.js'
 import { clamp, escapeHTML } from '../utils/helpers.js'
@@ -101,8 +101,9 @@ function createPin(totem) {
 }
 
 /**
- * Fixa a janela do recorte no chão (recortes com texto 3D próprio, como a
- * intro, não têm). Cria o pin na primeira vez, reaproveita nas seguintes.
+ * Fixa a janela do recorte no chão (todos os recortes têm, inclusive o primeiro, "Sobre";
+ * só itens com `reveal: true`, que mostram texto 3D próprio, não têm). Cria o pin na
+ * primeira vez, reaproveita nas seguintes.
  * Se já está visível, não faz nada. A animação sobe o cartão 30 px aparecendo,
  * com "quique" (back.out), depois de `delay` segundos.
  * @param {object} totem
@@ -155,7 +156,8 @@ export function updatePins() {
     }
     pin.el.style.display = ''
     pin.el.style.opacity = clamp((MAX_DIST - dist) / (MAX_DIST - FADE_DIST), 0, 1)
-    pin.el.style.transform = `translate(${((v.x + 1) / 2) * innerWidth}px, ${((1 - v.y) / 2) * innerHeight}px)` // NDC → pixels
+    // NDC → pixels DENTRO da camada .pins (que começa abaixo do cabeçalho e tem o tamanho da área do jogo)
+    pin.el.style.transform = `translate(${((v.x + 1) / 2) * viewport.width}px, ${((1 - v.y) / 2) * viewport.height}px)`
     pin.card.style.scale = clamp(16 / dist, 0.55, 1)
     pin.el.style.zIndex = String(1000 - Math.round(dist)) // a mais próxima fica por cima
   }

@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { camera, scene } from '../core/stage.js'
+import { camera, scene, viewport } from '../core/stage.js'
 import { PARTICLES } from '../data/level.js'
 import { rand, REDUCED_MOTION } from '../utils/helpers.js'
 import { toTexture } from '../utils/textures.js'
@@ -224,6 +224,36 @@ function spawn(x, y, z, dirX, dirZ) {
 }
 
 /**
+ * Explosão de partículas num ponto (usada na abertura: "terra" voando quando a bike sai
+ * do chão, e nas batidas). Reaproveita o mesmo pool do rastro, com cores e força próprias.
+ * @param {number} x posição no chão
+ * @param {number} z
+ * @param {number} count quantidade de partículas
+ * @param {string[]} colorList cores (#RRGGBB) sorteadas por partícula
+ * @param {number} [power=1] força da explosão (1 = padrão; 2 = o dobro da velocidade)
+ */
+export function burstAt(x, z, count, colorList, power = 1) {
+  if (!PARTICLES.enabled) return
+  const list = colorList.map((c) => new THREE.Color(c))
+  for (let n = 0; n < count; n++) {
+    const a = Math.random() * Math.PI * 2
+    spawn(x + Math.cos(a) * rand(0, 0.8), rand(0.05, 0.3), z + Math.sin(a) * rand(0, 0.8), 0, 0)
+    const i = (cursor - 1 + COUNT) % COUNT // índice da partícula que acabou de nascer
+    const i3 = i * 3
+    const speed = rand(1.5, 4.5) * power
+    velocities[i3] = Math.cos(a) * speed
+    velocities[i3 + 1] = rand(2, 5.5) * power
+    velocities[i3 + 2] = Math.sin(a) * speed
+    sizes[i] = rand(0.25, 0.6)
+    decay[i] = 1 / rand(0.7, 1.5)
+    const color = list[n % list.length]
+    colors[i3] = color.r
+    colors[i3 + 1] = color.g
+    colors[i3 + 2] = color.b
+  }
+}
+
+/**
  * Esquece a posição anterior da bike. Chame depois de teleportes (rebobinar, viagens
  * do inventário) para o rastro não "riscar" a tela de um ponto ao outro.
  * Também é chamado automaticamente quando a bike está travada (bike.locked).
@@ -301,6 +331,6 @@ export function updateParticles(dt, time) {
 
   /* 3) Uniforms: fator de perspectiva (altura da tela em pixels físicos ÷ abertura da câmera) e relógio */
   const fovRad = (camera.fov * Math.PI) / 180
-  material.uniforms.uScale.value = (innerHeight * Math.min(devicePixelRatio, 2)) / (2 * Math.tan(fovRad / 2))
+  material.uniforms.uScale.value = (viewport.height * Math.min(devicePixelRatio, 2)) / (2 * Math.tan(fovRad / 2))
   material.uniforms.uTime.value = time
 }

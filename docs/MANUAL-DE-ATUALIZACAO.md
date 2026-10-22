@@ -15,6 +15,7 @@ com o arquivo exato que você vai abrir, o trecho que deve procurar e como confe
 3. [Entendendo as pastas](#3-entendendo-as-pastas)
 4. [Como o jogo funciona (regras)](#4-como-o-jogo-funciona-regras)
 5. [Receitas de alteração](#5-receitas-de-alteração)
+   - ★ [5.0 Passo a passo completo: inserir recortes de Experiências e Formações](#50--passo-a-passo-completo-inserir-recortes-de-experiências-e-formações)
    - 5.1 Mudar os textos gerais
    - 5.2 Editar um recorte existente (título, texto, links)
    - 5.3 Adicionar um novo recorte
@@ -36,6 +37,13 @@ com o arquivo exato que você vai abrir, o trecho que deve procurar e como confe
    - 5.19 Partículas da bike
    - 5.20 SEO, favicon e prévia ao compartilhar
    - 5.21 Easter egg da bicicleta
+   - 5.22 Vidas (árvores, onças e recortes)
+   - 5.23 Floresta, bichos e neve
+   - 5.24 Botões de direção na tela, teclado e arrastar a bike
+   - 5.25 Abertura (triângulo neon) e janela inicial de instruções
+   - 5.26 Música de fundo e créditos
+   - 5.27 Placas de fim de rota
+   - 5.28 Bike 3D (cores e formato)
 6. [Testando antes de publicar](#6-testando-antes-de-publicar)
 7. [Publicando no GitHub Pages](#7-publicando-no-github-pages)
 8. [Problemas comuns e soluções](#8-problemas-comuns-e-soluções)
@@ -109,45 +117,55 @@ marina-portfolio/
 │   ├── apple-touch-icon.png ← ícone 180×180 para iPhone/iPad
 │   ├── og-image.jpg        ← imagem de prévia ao compartilhar o link (1200×630)
 │   ├── robots.txt, sitemap.xml ← ajudam o Google a indexar
-│   └── docs/               ← coloque aqui o currículo em PDF
+│   ├── som.mp3             ← música de fundo (de Daniel Micas Jardim da Silva)
+│   └── docs/               ← currículo em PDF
 ├── docs/                   ← este manual
 └── src/
-    ├── main.js             ← "maestro": junta tudo, roda o loop do jogo e trata os atropelos
-    ├── data/level.js       ← ★ CONTEÚDO: textos, recortes, links, ruas, placas, câmera, foto, partículas
-    ├── styles/main.css     ← aparência das janelas, botões, HUD, miniatura e foto do céu
+    ├── main.js             ← "maestro": junta tudo, roda o loop do jogo, atropelos, batidas e vidas
+    ├── data/level.js       ← ★ CONTEÚDO E AJUSTES: textos, recortes, ruas, placas, bike, vidas, floresta, bichos, som…
+    ├── styles/main.css     ← aparência do cabeçalho, botões, janelas, controles na tela, rebobinar
     ├── assets/
     │   ├── images/         ← ★ FOTO DE PERFIL (profile.jpeg)
-    │   ├── cutouts/        ← ★ IMAGENS dos recortes (bike, Marina, placas, experiências…)
+    │   ├── cutouts/        ← ★ IMAGENS dos recortes (experiências, formações, placas)
     │   └── ui/icons/       ← ícones do topo (LinkedIn, GitHub, e-mail…)
     ├── core/
-    │   ├── state.js        ← inventário/progresso salvo na aba do navegador
-    │   ├── timeMachine.js  ← rebobinar, viagens pelo inventário, reset do mundo
-    │   ├── CameraRig.js    ← câmera que segue a bike
-    │   ├── input.js        ← teclado, roda do mouse (zoom) e as sensibilidades (SETTINGS)
-    │   ├── pointerControls.js ← arrastar a bike, arrastar o cenário (pan) e pinça (mouse e dedo)
+    │   ├── state.js        ← inventário e vidas salvos na aba do navegador
+    │   ├── timeMachine.js  ← rebobinar (estilo Matrix), viagens pelo inventário, reset do mundo
+    │   ├── CameraRig.js    ← câmera que segue a bike o tempo todo
+    │   ├── input.js        ← teclado + botões na tela (mesmo comando), zoom e sensibilidades
+    │   ├── pointerControls.js ← arrastar a bike (botões ocultos), pinça e toque duplo
     │   ├── device.js       ← descobre se o visitante usa dedo (celular) ou mouse (PC)
     │   ├── invalidGestures.js ← percebe gestos que o site não suporta
     │   ├── physics.js      ← física (gravidade, colisões)
-    │   └── stage.js        ← cena 3D, luzes, câmera
+    │   ├── visitors.js     ← contador de visitantes
+    │   └── stage.js        ← cena 3D, luzes, câmera e a área do canvas (abaixo do cabeçalho)
     ├── world/
     │   ├── totems.js       ← os recortes colecionáveis e a explosão em papel
-    │   ├── bike.js         ← a bicicleta (velocidade, curvas, placas magnéticas)
-    │   ├── particles.js    ← rastro de partículas que a bike solta ao se mover
-    │   └── environment.js  ← chão, ruas, enfeites, placas, horizonte
+    │   ├── bike.js         ← a bike 3D (modelo, velocidade, curvas, arraste, placas magnéticas)
+    │   ├── intro.js        ← abertura: triângulo neon e bike saindo da terra
+    │   ├── forest.js       ← árvores (com colisão) e flores triangulares
+    │   ├── critters.js     ← borboletas, pássaros, coelhos e onças (as onças tiram vida)
+    │   ├── snow.js         ← neve de triângulos
+    │   ├── particles.js    ← rastro de partículas da bike e explosões de terra
+    │   └── environment.js  ← chão, ruas, prismas, placas, placas de fim de rota, horizonte
     ├── ui/
+    │   ├── onboarding.js   ← janela inicial com as instruções e o botão do currículo
+    │   ├── controls.js     ← botões de direção na tela (◀ ▶ ▲ ▼ ⚡) e o botão 🎮
+    │   ├── audio.js        ← música de fundo e botão de som com os créditos
+    │   ├── matrix.js       ← chuva de caracteres verdes do rebobinar
     │   ├── profile.js      ← foto de perfil: miniatura, foto no céu e janela "Sobre a Marina"
-    │   ├── screens.js      ← janelas: item, inventário, zerou, game over, resetar, contador de visitantes
-    │   ├── viewer.js       ← visualizador em tela cheia para links externos e "Saiba mais"
+    │   ├── screens.js      ← cabeçalho (barra e vidas) e janelas: item, inventário, zerou, game over, fim das vidas, resetar
+    │   ├── viewer.js       ← visualizador em tela cheia para os links "Saiba mais"
     │   ├── pins.js         ← janelas presas no chão depois que o recorte é destruído
-    │   ├── guide.js        ← guia de navegação (celular x PC) e "não mostrar novamente"
+    │   ├── guide.js        ← instruções de jogo (celular x PC, botões x arrastar) e guia de gestos
     │   ├── modal.js        ← a janela flutuante (abrir/fechar)
-    │   └── effects.js      ← avisos (toast) e papeizinhos voando na tela
-    └── utils/              ← funções auxiliares e texturas
+    │   └── effects.js      ← avisos (toast), papeizinhos e clarão vermelho de dano
+    └── utils/              ← funções auxiliares, texturas e localização da foto de perfil
 ```
 
 **Na maioria das vezes você só vai mexer em 4 lugares:**
 
-1. `src/data/level.js` → conteúdo (textos, recortes, links, foto, partículas).
+1. `src/data/level.js` → conteúdo e ajustes do jogo (textos, recortes, links, bike, vidas, floresta, som).
 2. `src/assets/cutouts/` e `src/assets/images/` → imagens.
 3. `index.html` → contatos do topo e textos de SEO.
 4. `public/` → favicon, prévia de compartilhamento e currículo.
@@ -162,8 +180,12 @@ marina-portfolio/
 
 Entender as regras ajuda a saber onde mexer:
 
+0. **Abertura**: ao carregar a página, um triângulo neon é desenhado no chão e a bike sai da terra de dentro
+   dele. Em seguida aparece a **janela de instruções**, adaptada ao aparelho (celular ou computador) e ao modo
+   de controle, com um botão grande **"Ver o currículo agora"** para quem não quer jogar.
 1. **Atropelar um recorte**: a bike precisa estar em movimento. O recorte explode em pedaços de papel,
-   entra no **inventário** e abre uma janela com o texto e o botão **"Saiba mais"**.
+   entra no **inventário**, **devolve 1 vida** e abre uma janela com o texto e o botão **"Saiba mais"**.
+   O primeiro recorte ("Marina Micas Jardim") abre a janela **"Sobre a Marina"**.
 2. **Janela presa no chão**: depois da explosão, uma versão pequena da janela fica fixa no chão, ao lado
    de onde o recorte estava. O link "Saiba mais" dela pode ser clicado a qualquer momento.
 3. **Estado final mantido**: o que já foi capturado **continua destruído** (com a janela no chão) mesmo
@@ -172,8 +194,11 @@ Entender as regras ajuda a saber onde mexer:
    - rebobina para o início;
    - escolhe "Manter o inventário" ao tentar novamente;
    - recarrega a página (F5) na mesma aba.
-4. **Reset completo pelo botão ↺ Resetar** (pede confirmação) ou por Game Over → Tentar novamente → **Resetar tudo**. Só aí o inventário
-   é apagado e os recortes voltam a ficar de pé.
+4. **Reset completo pelo menu ⟲ Rebobinar → ↺ Resetar tudo** (pede confirmação) ou por Tentar novamente →
+   **Resetar tudo**. Só aí o inventário é apagado e os recortes voltam a ficar de pé.
+4b. **Vidas**: começa com 6 (♥ no cabeçalho). Bater numa árvore ou encostar numa onça tira 1; explodir um
+   recorte devolve 1 (até o máximo de 6). Com zero vidas aparece **"Fim das vidas!"** com "Tentar novamente",
+   "Ver currículo" e "Ir aos contatos". Tentar novamente enche as vidas.
 5. **Game Over só ao tentar sair da página**: se a pessoa tenta fechar ou recarregar a aba sem 100% do
    inventário, o navegador mostra o aviso nativo dele ("Sair do site?"). Se ela escolher **ficar**, aparece o
    **Game Over** com "Continuar jogando", "Tentar novamente" e "Ir aos contatos".
@@ -190,13 +215,17 @@ Entender as regras ajuda a saber onde mexer:
 
    | Ação | Computador | Celular/tablet |
    |---|---|---|
-   | Mover a bike | clicar na bike e arrastar | tocar na bike e arrastar |
-   | Olhar outro ponto do mapa (pan) | clicar no cenário e arrastar | tocar no cenário e arrastar |
-   | Ir longe com a bike | arrastar a bike até a borda da tela | arrastar a bike até a borda da tela |
-   | Pedalar (alternativa) | W A S D / setas, Shift acelera | — |
+   | Virar | ◀ ▶ na tela, ou A D / setas laterais | ◀ ▶ na tela |
+   | Pedalar / frear e ré / turbo | ▲ / ▼ / ⚡ na tela, ou W / S / Shift | ▲ / ▼ / ⚡ na tela |
+   | Arrastar a bike (só com os botões **ocultos** no 🎮) | clicar na bike e arrastar | tocar na bike e arrastar |
    | Zoom | roda do mouse, pinça no trackpad, teclas + e − | pinça com dois dedos |
-   | Zoom normal + câmera de volta na bike | duplo clique ou tecla 0 | toque duplo |
+   | Zoom normal | duplo clique ou tecla 0 | toque duplo |
    | Ajuda | botão **? Ajuda** | botão **? Ajuda** |
+
+   - A **câmera segue a bike o tempo todo** (não existe mais "arrastar o cenário").
+   - O **teclado está sempre ativo** (acessibilidade) e as teclas funcionam juntas (ex.: W + A).
+   - Com os **botões na tela visíveis**, tocar/arrastar a bike não a move. Ocultando os botões (🎮),
+     arrastar volta a funcionar: a bike pedala até o ponto apontado.
 
 9. **Guia de navegação**: se a pessoa tenta um gesto que o site não suporta (clicar/tocar no mapa várias
    vezes, botão direito, três dedos, segurar o dedo parado, deslizar para os lados, apertar teclas sem
@@ -206,6 +235,229 @@ Entender as regras ajuda a saber onde mexer:
 ---
 
 ## 5. Receitas de alteração
+
+### 5.0 ★ Passo a passo completo: inserir recortes de Experiências e Formações
+
+Esta é a tarefa mais frequente do portfólio. Você só precisa de **dois arquivos**:
+
+| O quê | Onde |
+|---|---|
+| A **imagem** do recorte (o cartão) | uma pasta dentro de `src/assets/cutouts/` |
+| O **cadastro** do recorte (título, texto, posição, links) | `src/data/level.js`, na lista `ITEMS` |
+
+Inventário, porcentagem de "Conhecimento sobre Marina", vidas, janela presa no chão, explosão em
+papel e "Você zerou!" se ajustam **sozinhos**. Você não precisa mexer em nenhum outro arquivo.
+
+---
+
+#### Passo 1 — Preparar a imagem do cartão
+
+Os cartões atuais foram exportados do Figma com **285 px de largura** e altura variável
+(de 479 a 773 px). Siga o mesmo padrão para o novo cartão combinar com os outros:
+
+1. No Figma (ou outro editor), monte o cartão com: título, imagem, etiquetas (ano e ferramentas),
+   texto curto e o botão "Atropele para saber mais". Use os cartões existentes como modelo:
+   abra um deles em `src/assets/cutouts/experiencias/design/` para conferir.
+2. Exporte em **PNG**, **285 px de largura**, com **fundo transparente** fora do cartão
+   (os cantos arredondados precisam ficar transparentes). É o contorno transparente que vira os
+   pedaços de papel na explosão.
+3. **Anote a altura em pixels** da imagem exportada. Você vai usar esse número no passo 5.
+   - No Windows: clique com o botão direito no arquivo → **Propriedades → Detalhes → Altura**.
+   - No VS Code: abra a imagem; o tamanho aparece no canto inferior direito.
+4. Tamanho do arquivo: tente ficar abaixo de **150 KB** (os atuais têm de 38 a 86 KB).
+
+#### Passo 2 — Salvar a imagem na pasta certa
+
+| Tipo de recorte | Pasta |
+|---|---|
+| Experiência de Desenvolvimento | `src/assets/cutouts/experiencias/desenvolvimento/` |
+| Experiência de Design | `src/assets/cutouts/experiencias/design/` |
+| Experiência de Diversidade | `src/assets/cutouts/experiencias/diversidade/` |
+| Formação | `src/assets/cutouts/formacoes/` |
+
+Sobre o **nome do arquivo**:
+
+- Pode ter espaços e acentos (os atuais têm, ex.: `design - Minha marca.png`), mas o nome no
+  código precisa ser **idêntico letra por letra**, inclusive maiúsculas, acentos e a extensão `.png`.
+- Para evitar erro de digitação, prefira nomes simples, sem acento: `design-novo-projeto.png`.
+- Dica: no Explorador de Arquivos, clique no arquivo, aperte **F2** e **Ctrl + C** para copiar o nome exato.
+
+#### Passo 3 — Abrir o cadastro
+
+1. No VS Code, abra `src/data/level.js`.
+2. Aperte **Ctrl + F** e procure por `export const ITEMS`.
+3. A lista está organizada por blocos com comentários. Procure o bloco da sua rua:
+   - `// FASE 2 — Experiências › Desenvolvimento`
+   - `// Experiências › Design`
+   - `// Experiências › Diversidade`
+   - `// FASE 2 — Formações (rua única)`
+
+#### Passo 4 — Escolher a posição na rua
+
+Cada rua é uma linha reta. O `x` diz **qual rua**; o `z` diz **em que altura da rua**
+(quanto mais negativo, mais longe do início).
+
+| Rua | `x` (sempre este) | `z` permitido | Recortes que já existem (`z`) |
+|---|---|---|---|
+| Desenvolvimento | `-46` | de `-84` até `-152` | `-100`, `-128` |
+| Design | `-30` | de `-84` até `-152` | `-100`, `-128` |
+| Diversidade | `-14` | de `-84` até `-152` | `-100`, `-128` |
+| Formações | `30` | de `-70` até `-152` | `-84`, `-108`, `-132` |
+
+Regras para o `z`:
+
+1. Deixe **pelo menos 14 de distância** de qualquer outro recorte da mesma rua (os cartões têm
+   2,4 m de largura e a janela presa no chão precisa de espaço).
+2. **Não passe de `-152`**: em `-160` fica a placa de fim de rota.
+3. **Evite o caminho das onças** (fique a 5 ou mais de distância destes `z`):
+   Desenvolvimento `-114`, Design `-142`, Diversidade `-114`, Formações `-120`.
+   (Os caminhos estão em `CRITTERS.jaguars`, no mesmo arquivo.)
+4. As árvores se afastam dos recortes **sozinhas**: não precisa se preocupar com elas.
+5. Ordem cronológica: o mais antigo fica mais perto do início (z menos negativo).
+
+Exemplos de vagas livres hoje: Desenvolvimento/Design/Diversidade em `z = -86` e `z = -150`
+(Design: evite `-142`, use `-150` só se o recorte de `-128` continuar lá); Formações em `z = -150`.
+
+> **Quer conferir um lugar no mapa?** Rode `npm run dev`, abra o console (F12) e teleporte a bike:
+> `__game.bike.body.position.set(-46, 0.6, -86)`. A câmera vai até lá.
+
+#### Passo 5 — Copiar o modelo e preencher
+
+Copie o modelo abaixo e cole **dentro do bloco da rua**, logo depois do último `item(...)` dele:
+
+```js
+  item('dev-3', 'desenvolvimento', 'Título do projeto', '2025', -46, -150, {
+    image: 'experiencias/desenvolvimento/dev-novo-projeto.png',
+    size: cardSize(600),
+    body: 'Texto que aparece na janela ao atropelar. Conte o contexto, o que você fez e o resultado (2025). Ferramentas e temas: Python, Figma.',
+    links: [{ label: 'Saiba mais', url: 'https://link-do-projeto.com' }],
+  }),
+```
+
+O que é cada parte (a ordem dentro de `item( ... )` **não pode mudar**):
+
+| Parte | Exemplo | O que é | Regras |
+|---|---|---|---|
+| 1º id | `'dev-3'` | Nome interno único | Sem espaços e sem acentos. **Nunca repita** um id existente e **nunca mude** o id de um recorte já publicado (o inventário dos visitantes usa o id). Padrão: `dev-N`, `design-N`, `div-N`, `edu-N`. |
+| 2º grupo | `'desenvolvimento'` | Categoria | Um destes: `desenvolvimento`, `design`, `diversidade`, `formacoes`. Define a etiqueta roxa na janela ("Experiências · Desenvolvimento"). |
+| 3º título | `'Título do projeto'` | Título | Aparece na janela grande, na janela do chão e no inventário. |
+| 4º subtítulo | `'2025'` | Texto curto | Só aparece se a imagem não carregar (recorte provisório). Use o ano. |
+| 5º `x` | `-46` | Rua | Copie da tabela do passo 4. |
+| 6º `z` | `-150` | Posição na rua | Escolha seguindo as regras do passo 4. |
+| `image:` | `'experiencias/desenvolvimento/dev-novo-projeto.png'` | Caminho da imagem | Começa **depois** de `src/assets/cutouts/`. Nome idêntico ao arquivo. |
+| `size:` | `cardSize(600)` | Tamanho no mundo | Coloque entre parênteses a **altura em pixels** anotada no passo 1. Todos os cartões ficam com a mesma largura (2,4 m) e a altura proporcional. |
+| `body:` | `'Texto…'` | Texto da janela | Aparece completo na janela grande e resumido (3 linhas) na janela presa no chão. |
+| `links:` | `[{ label: 'Saiba mais', url: 'https://…' }]` | Botões | Veja o passo 6. |
+
+**Pontuação que mais quebra o código** (confira duas vezes):
+
+- Cada `item(...)` termina com `}),` — **chave, parêntese e vírgula**.
+- Cada opção (`image`, `size`, `body`, `links`) termina com **vírgula**.
+- Textos ficam entre **aspas simples** `'...'`. Se o texto tiver apóstrofo (`d'água`), escreva
+  `d\'água` ou troque as aspas externas por crases: `` `d'água` ``.
+
+#### Passo 6 — Links do recorte ("Saiba mais")
+
+`links` é uma lista entre colchetes `[ ]`. Cada link é `{ label: 'Texto do botão', url: 'endereço' }`,
+separados por vírgula:
+
+```js
+    links: [
+      { label: 'Saiba mais', url: 'https://www.behance.net/meu-projeto' },
+      { label: 'Ver código', url: 'https://github.com/marinamicas/projeto' },
+      { label: 'Vídeo', url: 'https://www.youtube.com/watch?v=XXXXXXXX' },
+      { label: 'Certificado (PDF)', url: './docs/certificado-x.pdf' },
+    ],
+```
+
+- **Sites comuns e vídeos** (YouTube/Vimeo) abrem num visualizador em tela cheia dentro do jogo.
+- **PDF próprio** (certificado, artigo): coloque o arquivo em `public/docs/` e use `./docs/nome.pdf`
+  (sem `public/` no endereço!). No celular, o PDF abre no leitor do aparelho.
+- **LinkedIn, GitHub, Instagram…** não deixam ser exibidos dentro de outro site: aparece um cartão com
+  "Copiar link".
+- Sem links: `links: []`.
+
+#### Passo 7 — Salvar e conferir
+
+1. Salve (**Ctrl + S**). Com `npm run dev` rodando, a página recarrega sozinha.
+2. Confira a lista:
+   - [ ] O contador do inventário aumentou (ex.: `0/10` → `0/11`).
+   - [ ] O cartão aparece na rua, com a imagem real (se aparecer um papel colorido com o título,
+         o caminho em `image:` não bate com o arquivo; volte ao passo 2).
+   - [ ] O cartão não está esticado (se estiver, o número em `cardSize(...)` não é a altura da imagem).
+   - [ ] Atropelar o cartão abre a janela com o seu texto e devolve 1 vida.
+   - [ ] Depois de fechar, a janela fica presa no chão, à direita da rua.
+   - [ ] O console (F12) não mostra erro em vermelho.
+3. Atalhos de teste no console (F12):
+   ```js
+   __game.totems.map((t) => t.item.id)                 // lista os ids: o novo precisa aparecer
+   __game.bike.body.position.set(-46, 0.6, -150 + 8)   // leva a bike para 8 m antes do cartão (troque x e z)
+   ```
+   Depois aperte **W** (ou ▲) para atropelar.
+
+#### Exemplo completo: nova Formação
+
+As três formações atuais (`edu-1`, `edu-2`, `edu-3`) ainda são **provisórias** ("Formação 1/2/3").
+Para trocar uma delas pelo seu cartão real, **mantenha o id** e substitua o resto. Antes:
+
+```js
+  item('edu-1', 'formacoes', 'Formação 1', 'Informática', 30, -84, { image: 'formacoes/edu-1.webp' }),
+```
+
+Depois (imagem `src/assets/cutouts/formacoes/formacao - Tecnico em Informatica.png`, 285 × 520 px):
+
+```js
+  item('edu-1', 'formacoes', 'Técnico em Informática', '2014', 30, -84, {
+    image: 'formacoes/formacao - Tecnico em Informatica.png',
+    size: cardSize(520),
+    body: 'Curso técnico onde comecei na programação e no design de interfaces (2014). Temas: lógica, redes, banco de dados e web.',
+    links: [{ label: 'Certificado', url: './docs/certificado-tecnico.pdf' }],
+  }),
+```
+
+Para **acrescentar** uma quarta formação, use um id novo (`edu-4`) e um `z` livre (ex.: `-150`).
+
+#### Exemplo completo: nova Experiência de Diversidade
+
+Imagem `src/assets/cutouts/experiencias/diversidade/div-mentoria.png`, 285 × 640 px:
+
+```js
+  // Experiências › Diversidade
+  item('div-1', 'diversidade', 'Jogo das Diagonais', '2018', -14, -100, { /* …já existe… */ }),
+  item('div-2', 'diversidade', 'Ícones Inteligentes', '2018', -14, -128, { /* …já existe… */ }),
+  item('div-3', 'diversidade', 'Mentoria de Mulheres na Tecnologia', '2025', -14, -150, {
+    image: 'experiencias/diversidade/div-mentoria.png',
+    size: cardSize(640),
+    body: 'Mentorei mulheres em transição de carreira para tecnologia (2025). Temas: carreira, UX, dados e diversidade.',
+    links: [{ label: 'Saiba mais', url: 'https://link-da-iniciativa.org' }],
+  }),
+```
+
+#### A rua ficou cheia? Aumentando o comprimento
+
+Se não couber mais nenhum recorte entre `-84` e `-152`:
+
+1. Em `ROADS`, troque o `-165` do fim da rua por um número mais negativo, ex.: `-205`.
+   Ex.: `[[-46, -78], [-46, -165]]` → `[[-46, -78], [-46, -205]]`.
+2. Em `END_SIGNS`, mova a placa de fim dessa rua para 5 a menos que o novo fim (ex.: `z: -200`).
+3. Em `BOUNDS`, confira se `minZ` (hoje `-195`) é mais negativo que o novo fim; se não, ajuste (ex.: `-215`).
+4. A frase do horizonte e a zona da câmera "horizon" (`p.z < -150` em `ZONES`) também podem ser
+   ajustadas para o novo fim (ex.: `p.z < -190`).
+5. Mova a linha do horizonte em `src/world/environment.js` (`line.position.set(0, 0.05, -205)` e
+   `horizon.position.set(0, 13, -225)`) para depois do novo fim.
+
+#### Problemas comuns ao inserir recortes
+
+| Sintoma | Causa | Solução |
+|---|---|---|
+| Tela preta, nada carrega | Vírgula, aspas ou `})` faltando | Veja o erro no console (F12): ele indica a linha. Compare com o modelo do passo 5. |
+| Aparece um papel colorido com o título no lugar da imagem | Caminho de `image:` diferente do arquivo | Confira pasta, maiúsculas, acentos, espaços e a extensão `.png`. |
+| Cartão esticado ou achatado | `cardSize(...)` com altura errada | Use a altura em pixels real da imagem. |
+| Inventário mostra um recorte a mais "fantasma" | id repetido | Cada `item(...)` precisa de um id diferente. |
+| Recorte sumiu do inventário de quem já jogou | id de um recorte antigo foi alterado | Volte o id original. |
+| O recorte fica dentro de uma árvore ou no caminho da onça | `z` perto do caminho das onças | Afaste 5 ou mais dos `z` da regra 3 do passo 4. As árvores se reorganizam sozinhas ao recarregar. |
+
+---
 
 ### 5.1 Mudar os textos gerais
 
@@ -347,8 +599,8 @@ Se quiser uma categoria nova (ex.: "Voluntariado"):
 
 | Arte | Caminho |
 |---|---|
-| Bicicleta + avatar | `cutouts/avatar/bike.webp` (virada para a **direita**, rodas encostando na base) |
-| Recorte da Marina | `cutouts/intro/marina.webp` |
+| Bicicleta | não usa imagem: é um modelo 3D (receita 5.28) |
+| Primeiro recorte ("Marina Micas Jardim") | não usa imagem: o jogo desenha o cartão com a foto de perfil (`src/assets/images/profile.jpeg`) |
 | Placas | `cutouts/signs/experiencias.webp`, `formacoes.webp`, `desenvolvimento.webp`, `design.webp`, `diversidade.webp` |
 | Experiências | `cutouts/experiencias/{desenvolvimento,design,diversidade}/*.webp` |
 | Formações | `cutouts/formacoes/*.webp` |
@@ -408,9 +660,10 @@ As cores são códigos hexadecimais (`#RRGGBB`). Use um seletor como https://htm
 | Largura da janela | `.pin-card { width: 250px; ... }` no CSS |
 | Quantidade de linhas do texto | `-webkit-line-clamp: 3; line-clamp: 3;` no CSS |
 | Cor do botão "Saiba mais" | `.pin-card .btn { background: var(--purple); ... }` no CSS |
-| Tempo até ela aparecer depois do atropelo | Em `src/main.js`, função `hitTotem`: `showPin(totem, 1)`. O `1` é o atraso em segundos. |
+| Tempo até ela aparecer depois do atropelo | Em `src/main.js`, função `hitTotem`: `showPin(totem, 1.2)`. O `1.2` é o atraso em segundos. |
 
-O recorte da apresentação (Marina) **não** tem janela no chão, porque ele já mostra o texto em 3D.
+O primeiro recorte ("Marina Micas Jardim", apresentação) também deixa uma janela no chão, no mesmo
+visual dos outros, com o texto de apresentação e o botão "Ver currículo".
 
 ---
 
@@ -421,6 +674,7 @@ O recorte da apresentação (Marina) **não** tem janela no chão, porque ele j�
 - `state.collected` → lista dos ids dos recortes atropelados.
 - `state.links` → lista dos ids cujo "Saiba mais" já foi clicado.
 - `state.won` → se a janela "Você zerou!" já apareceu.
+- `state.lives` → vidas restantes (0 a 6).
 
 Funções principais:
 
@@ -428,14 +682,15 @@ Funções principais:
 |---|---|
 | `collect(id)` | Adiciona o recorte ao inventário (só conta uma vez). |
 | `markLink(id)` | Marca que o "Saiba mais" foi aberto (janela grande ou janela do chão). |
-| `resetProgress()` | Apaga tudo. Chamada pelo botão ↺ Resetar (depois da confirmação) ou por "Resetar tudo". |
+| `loseLife(n)` / `gainLife(n)` / `resetLives()` | Tira, devolve ou enche as vidas. |
+| `resetProgress()` | Apaga tudo e enche as vidas. Chamada pelo menu Rebobinar → ↺ Resetar tudo (depois da confirmação) ou por "Resetar tudo". |
 
 O contador do botão **Inventário** e a barra **"Conhecimento sobre Marina"** são atualizados sozinhos
 toda vez que o estado muda (função `updateHUD` em `src/ui/screens.js`).
 
 **Testar do zero:** durante o desenvolvimento, para começar sem progresso, use uma destas opções:
 
-- botão **↺ Resetar → Sim, resetar tudo**; ou
+- menu **⟲ Rebobinar → ↺ Resetar tudo → Sim, resetar tudo**; ou
 - feche a aba e abra de novo; ou
 - no console (F12): `sessionStorage.clear()` e depois F5.
 
@@ -443,21 +698,26 @@ toda vez que o estado muda (função `updateHUD` em `src/ui/screens.js`).
 `state.js`:
 
 ```js
-const STORAGE_KEY = 'mmj-portfolio:v1'  // mude para 'mmj-portfolio:v2'
+const STORAGE_KEY = 'mmj-portfolio:v2'  // mude para 'mmj-portfolio:v3'
 ```
 
 ---
 
-### 5.10 Botão Resetar, Game Over e "Tentar novamente"
+### 5.10 Resetar, Game Over, Fim das vidas e "Tentar novamente"
 
-**Arquivo:** `src/ui/screens.js`.
+**Arquivo:** `src/ui/screens.js`. O botão **↺ Resetar tudo** fica **dentro do menu ⟲ Rebobinar**
+(`index.html`, bloco `.rewind-menu`).
 
 O caminho completo é:
 
 ```
-Botão "↺ Resetar"
+Menu "⟲ Rebobinar" → "↺ Resetar tudo"
    └── showResetConfirm()  → "Resetar o jogo?" [Sim, resetar tudo] [Cancelar]
-         └── Sim → rewind('start', { fresh: true })  (apaga o inventário e remonta os recortes)
+         └── Sim → rewind('start', { fresh: true })  (apaga o inventário, enche as vidas e remonta os recortes)
+
+Vidas chegaram a zero (árvore/onça)
+   └── showLivesOver() → "Fim das vidas!" [Tentar novamente] [Ver currículo] [Ir aos contatos]
+         └── fechar sem escolher → volta ao início mantendo o inventário, vidas cheias
 
 Fechar/recarregar a aba (evento "beforeunload")
    ├── inventário completo → sai sem aviso
@@ -469,7 +729,7 @@ Fechar/recarregar a aba (evento "beforeunload")
    └── showRetryChoice()
          ├── inventário vazio → volta direto ao início
          └── senão pergunta:
-               [Manter o inventário] → rewind('start')                   (mantém tudo)
+               [Manter o inventário] → restartKeep()                      (mantém tudo, enche as vidas)
                [Resetar tudo]        → rewind('start', { fresh: true })  (apaga tudo)
 ```
 
@@ -479,7 +739,7 @@ Fechar/recarregar a aba (evento "beforeunload")
 ```js
 switch (el.dataset.action) {
   case 'retry':          showRetryChoice(); break
-  case 'restart-keep':   rewind('start'); break
+  case 'restart-keep':   restartKeep(); break
   case 'restart-reset':
   case 'confirm-reset':  rewind('start', { fresh: true }); break
   case 'close':          ui.close(); break
@@ -497,8 +757,8 @@ switch (el.dataset.action) {
      break
    ```
 
-**Textos:** o texto da confirmação fica em `TEXTS.resetConfirm` e o do Game Over em `TEXTS.gameOver`
-(`src/data/level.js`).
+**Textos:** confirmação em `TEXTS.resetConfirm`, Game Over em `TEXTS.gameOver` e Fim das vidas em
+`TEXTS.livesOver` (`src/data/level.js`).
 
 **Desligar o aviso ao fechar a aba:** em `src/main.js`, apague a linha `enableExitGuard(() => playing)`.
 
@@ -518,6 +778,12 @@ switch (el.dataset.action) {
   fork:  { x: 0, z: -30, heading: 0 },  // antes da bifurcação
   ```
 - As mensagens que aparecem ao terminar ficam na variável `doneMessage` da função `rewind`.
+- **Visual "Matrix"**: enquanto rebobina, a cena fica verde, cai uma chuva de caracteres verdes
+  (`src/ui/matrix.js`), a bike solta um rastro verde de "dados" e o letreiro "◀◀ REBOBINANDO" pisca.
+  - Velocidade: em `rewind()`, `clamp(total / 45, 0.9, 2.6)` → 45 m/s, entre 0,9 s e 2,6 s.
+    Aumente o 45 para rebobinar ainda mais rápido.
+  - Caracteres, tamanho e velocidade da chuva: `GLYPHS`, `FONT_PX` e `SPEED` em `matrix.js`.
+  - Cor da cena: regra `body.is-rewinding .webgl` no `main.css` (`hue-rotate(70deg)` = verde).
 
 ---
 
@@ -541,9 +807,18 @@ Tudo em `src/data/level.js`:
 
 ### 5.13 Velocidade da bike e força para atropelar
 
-- **Velocidade:** `src/world/bike.js` → função `updateBike`:
+- **Velocidade, curva e precisão:** `src/data/level.js` → `export const BIKE`. Teclado e botões na tela
+  usam **exatamente** estes números:
   ```js
-  const max = input.boost ? 17 : 10  // 17 com Shift, 10 normal
+  maxSpeed: 10,       // m/s normal (▲ / W)
+  boostSpeed: 16,     // m/s com turbo (⚡ / Shift)
+  reverseFactor: 0.4, // ré = 40% da velocidade
+  accel: 6,           // arrancada (maior = mais rápida)
+  brake: 9,           // frenagem ao soltar (maior = para mais rápido)
+  turnRate: 2.4,      // curva em rad/s (maior = vira mais rápido)
+  pivotFactor: 0.45,  // parada, gira no lugar a 45% da curva (ajuste fino)
+  turnSmoothing: 14,  // suavidade da curva (maior = resposta mais seca)
+  drag: { speedPerMeter: 2.2, maxSpeed: 12, deadZone: 0.6, turnRate: 9 }, // arrastar com o dedo/mouse
   ```
 - **Velocidade mínima para atropelar:** `src/world/totems.js`:
   ```js
@@ -560,7 +835,7 @@ Tudo em `src/data/level.js`:
 ```js
 export const SETTINGS = {
   zoom: { wheel: 0.0014, trackpadPinch: 0.012, key: 0.16 },
-  drag: { bikeHitRadius: 44, edgeMargin: 0.1, edgeSpeed: 28 },
+  drag: { bikeHitRadius: 48 },
   tap: { maxMove: 10, maxTime: 260, doubleGap: 320 },
   longPressMs: 900,
 }
@@ -568,13 +843,14 @@ export const SETTINGS = {
 
 | Quero… | O que mudar |
 |---|---|
-| Facilitar "pegar" a bike com o dedo | Aumente `drag.bikeHitRadius` (em pixels, ex.: `60`). |
-| Câmera andar mais rápido quando a bike chega na borda | Aumente `drag.edgeSpeed` (metros por segundo). |
-| Faixa da borda que faz a câmera andar mais larga | Aumente `drag.edgeMargin` (`0.1` = 10% da tela). |
+| Facilitar "pegar" a bike com o dedo (botões ocultos) | Aumente `drag.bikeHitRadius` (em pixels, ex.: `60`). |
 | Zoom da roda do mouse mais rápido | Aumente `zoom.wheel` (ex.: `0.002`). |
 | Zoom da pinça do trackpad mais suave | Diminua `zoom.trackpadPinch` (ex.: `0.008`). |
 | Cada toque em + / − dar mais zoom | Aumente `zoom.key`. |
 | Toque duplo mais fácil de acertar | Aumente `tap.doubleGap` (em milissegundos). |
+
+**A câmera segue a bike o tempo todo.** Quão "colada" ela fica: `rig.lag` em `src/main.js`
+(`8` jogando, `14` no rebobinar; maior = cola mais). O ângulo de visão fica em `DEFAULT_VIEW` (`level.js`).
 
 **Limites e suavidade do zoom:** `src/core/CameraRig.js`, no `constructor`:
 
@@ -671,9 +947,13 @@ Aparece embaixo da barra de conhecimento e na tela inicial:
 - **Em desenvolvimento** (`npm run dev`) os números só são lidos, nunca somados.
 - O serviço usado é o **Abacus** (https://abacus.jasoncameron.dev): gratuito, sem cadastro.
 
-**Mudar a data de início:** em `level.js`, troque `since: '2026-10-21'` (formato AAAA-MM-DD).
+**Mudar a data de início:** em `level.js`, troque `since: '2026-10-22'` (formato AAAA-MM-DD).
 
-**Zerar a contagem:** troque o `namespace` (ex.: `'marinamicas-portfolio-2027'`). Os números começam do zero.
+**Zerar a contagem** (feito em 22/10/2026): troque o `namespace` por um nome novo, de preferência com a
+data (ex.: `'marinamicas-portfolio-2027-01-01'`), e ajuste `since`. Os números começam do zero e todos os
+aparelhos voltam a contar como visitantes únicos (a marca do aparelho inclui o namespace).
+Em `npm run dev`, um namespace novo mostra "0" e o console registra um erro 404: é normal, o serviço só
+cria o contador na primeira visita ao site publicado.
 
 **Se o serviço sair do ar:** o texto vira "Visitantes: indisponível no momento" e o jogo continua normal.
 Para trocar de serviço, só a função `call()` em `visitors.js` precisa mudar.
@@ -759,9 +1039,116 @@ Resumo:
 A frase "A escolha da bicicleta não foi por acaso: é o meu veículo predileto e amo andar de bike!" fica em
 `TEXTS.bike` (`src/data/level.js`) e aparece:
 
-- na janela **"Sobre a Marina"** (miniatura da foto), em destaque lilás;
-- como **aviso** uma vez por visita, 1,5 s depois do primeiro arraste da bike. Para mudar o atraso ou
-  desligar, veja `maybeTellBikeStory()` em `src/main.js`.
+- na janela **"Sobre a Marina"** (miniatura da foto e primeiro recorte), em destaque lilás;
+- como **aviso** uma vez por visita, depois de 4 segundos pedalando. Para mudar o tempo ou
+  desligar, veja `maybeTellBikeStory()` em `src/main.js` (`movingFor < 4`).
+
+---
+
+### 5.22 Vidas (árvores, onças e recortes)
+
+**Configuração:** `LIVES` em `src/data/level.js`. **Regras:** função `hurt()` e `checkHazards()` em `src/main.js`.
+
+```js
+export const LIVES = {
+  start: 6,                 // vidas ao começar (e o máximo)
+  treeDamage: 1,            // perde ao bater numa árvore
+  jaguarDamage: 1,          // perde ao encostar numa onça
+  cutoutHeal: 1,            // ganha ao explodir um recorte (nunca passa de start)
+  invulnerableSeconds: 1.6, // depois de perder vida, a bike pisca e fica imune por este tempo
+}
+```
+
+- Os corações do cabeçalho são desenhados sozinhos a partir de `start` (`renderLives()` em `screens.js`).
+- As vidas ficam salvas na aba (como o inventário). Recarregar a página com 0 vidas recomeça com 6.
+- Texto da janela "Fim das vidas!": `TEXTS.livesOver`.
+- Segurar ▲ contra uma árvore faz a bike bater de novo a cada `invulnerableSeconds` (perde outra vida).
+
+---
+
+### 5.23 Floresta, bichos e neve
+
+| Quero… | Onde |
+|---|---|
+| Mais/menos árvores ou flores | `FOREST.trees` / `FOREST.flowers` (`level.js`). Menos = mais leve no celular. |
+| Árvores mais longe/perto da rua | `FOREST.roadClearance` (metros do centro da rua; a rua tem 7 de largura). |
+| Cores das copas | `FOREST.canopyColors` (verdes + roxos da marca). |
+| Altura das árvores | `FOREST.treeHeight: [mín, máx]`. |
+| Quantidade de borboletas, pássaros, coelhos | `CRITTERS.butterflies`, `birds`, `rabbits`. |
+| Mudar/adicionar onças | `CRITTERS.jaguars`: cada uma anda de `from: [x, z]` até `to: [x, z]` e volta, a `speed` m/s. Copie uma linha para criar outra. |
+| Raio de batida | `FOREST.hitRadius` (árvores) e `CRITTERS.jaguarHitRadius` (onças). |
+| Neve mais/menos visível | `SNOW.opacity` (0 a 1), `SNOW.count`, `SNOW.size`, `SNOW.fallSpeed`. |
+| Formato das peças | `src/world/forest.js` (árvores/flores), `critters.js` (bichos), `snow.js` (flocos). |
+
+As árvores são sorteadas a cada carregamento, mas **nunca** nascem: na rua, no ponto de partida, perto de
+placas, recortes, janelas do chão, prismas e no caminho das onças.
+
+---
+
+### 5.24 Botões de direção na tela, teclado e arrastar a bike
+
+**Arquivos:** `src/ui/controls.js` (botões), `src/core/input.js` (teclado + botões), `index.html`
+(bloco `.touch-controls`), `main.css` (bloco "Botões de direção").
+
+- **Os botões e o teclado são o mesmo comando**: cada botão "aperta" uma tecla virtual. Por isso a
+  precisão é idêntica. Para calibrar, mexa em `BIKE` no `level.js` (receita 5.13).
+- **Dois botões ao mesmo tempo**: cada botão acompanha o seu próprio dedo (dá para virar e acelerar juntos).
+- **Botão 🎮 "Botões"** no topo: mostra/oculta os botões. A escolha fica salva no navegador.
+  - Botões visíveis → tocar/arrastar a bike não a move.
+  - Botões ocultos → tocar/clicar na bike e arrastar faz ela pedalar até o ponto apontado.
+- **Começar com os botões ocultos**: em `controls.js`, `const DEFAULT_VISIBLE = false`.
+- **Tamanho dos botões**: `--pad-size: 64px` no `:root` do `main.css` (58 px no celular).
+- **Teclado** (sempre ativo): W/↑ frente, S/↓ ré, A/← esquerda, D/→ direita, Shift turbo, + − 0 zoom.
+
+---
+
+### 5.25 Abertura (triângulo neon) e janela inicial de instruções
+
+- **Abertura:** `src/world/intro.js`; ajustes em `INTRO` no `level.js` (tamanho do triângulo,
+  tempo de desenho, tempo da bike subindo, cores do neon).
+- **Janela inicial:** `src/ui/onboarding.js`. As instruções vêm de `buildInstructions()` em
+  `src/ui/guide.js`, que monta o texto conforme o aparelho (celular x computador) e o modo
+  (botões x arrastar). O mesmo texto aparece no botão **? Ajuda**.
+- **Botão do currículo**: `CV_URL` em `onboarding.js` (padrão `./docs/curriculo-marina-micas.pdf`).
+
+---
+
+### 5.26 Música de fundo e créditos
+
+- **Arquivo:** `public/som.mp3`. Para trocar a música, substitua o arquivo mantendo o nome
+  (ou mude `AUDIO.file` no `level.js`).
+- **Por que `.mp3` e não `.mpeg`:** o arquivo original era um MP3 com a extensão `.mpeg`. O GitHub Pages
+  entrega `.mpeg` como vídeo e o Firefox não toca; com `.mp3` funciona em todos os navegadores.
+- **Volume e crédito:** `AUDIO.volume` (0 a 1) e `AUDIO.credit` ("Daniel Micas Jardim da Silva").
+- **Autoplay:** os navegadores só deixam tocar som depois do primeiro toque/clique do visitante.
+  O jogo tenta tocar sozinho e, se o navegador bloquear, começa no primeiro gesto (ex.: "Começar a pedalar").
+- O botão 🔊/🔇 no topo liga/desliga; a escolha fica salva. A música pausa quando a aba fica escondida.
+
+---
+
+### 5.27 Placas de fim de rota
+
+**Arquivo:** `END_SIGNS` em `src/data/level.js`.
+
+```js
+{ route: 'Design', x: -30, z: -160, text: 'Toda forma bonita nasceu de alguém que parou para escutar…' },
+```
+
+- `route` aparece na faixa "FIM DA ROTA · DESIGN"; `text` é a frase poética.
+- `x` é a rua; `z: -160` é logo antes do fim (as ruas terminam em -165).
+- A placa tem colisão: a bike para nela. O desenho fica em `makeEndSignTexture()` (`src/utils/textures.js`).
+
+---
+
+### 5.28 Bike 3D (cores e formato)
+
+**Arquivo:** `src/world/bike.js`.
+
+- **Cores:** objeto `COLORS` no topo (quadro, pneus, raios, camiseta, cabelo, capacete…).
+- **Tamanho das rodas:** `WHEEL_R`. **Peças:** função `buildModel()`.
+- **Seta neon no chão** (mostra a direção): `buildDirectionMarker()`; cor `PALETTE.lilac`.
+- O farol branco (frente) e a lanterna vermelha (trás) também deixam claro para onde a bike aponta.
+- A imagem antiga `src/assets/cutouts/avatar/bike.png` não é mais usada (a bike agora é 3D).
 
 ---
 
@@ -769,24 +1156,30 @@ A frase "A escolha da bicicleta não foi por acaso: é o meu veículo predileto 
 
 Rode o projeto (`npm run dev`) e confira esta lista:
 
-- [ ] A tela inicial abre e o botão "Pedalar ▶" funciona.
-- [ ] Atropelar a Marina mostra o texto de apresentação em 3D.
-- [ ] Atropelar cada recorte: abre a janela, o contador do inventário aumenta 1, e depois aparece a janela no chão.
+- [ ] Ao carregar: o triângulo neon é desenhado e a bike sai da terra; depois abre a janela "Como jogar".
+- [ ] A janela "Como jogar" mostra instruções do aparelho certo e o botão "Ver o currículo agora" abre o PDF.
+- [ ] Atropelar o primeiro recorte ("Marina Micas Jardim") abre a janela "Sobre"; ao fechar, ela fica presa no chão.
+- [ ] Atropelar cada recorte: abre a janela, o contador do inventário aumenta 1, devolve 1 vida e depois aparece a janela no chão.
+- [ ] Bater numa árvore ou encostar numa onça tira 1 vida (clarão vermelho); com 0 vidas aparece "Fim das vidas!".
+- [ ] Botões ◀ ▶ ▲ ▼ ⚡ funcionam, inclusive dois ao mesmo tempo; as teclas W A S D acendem os botões equivalentes.
+- [ ] Com os botões visíveis, arrastar a bike não a move; ocultando no 🎮, arrastar passa a funcionar.
+- [ ] A câmera acompanha a bike o tempo todo.
+- [ ] No fim de cada rua há uma placa "Fim da rota" com a frase.
+- [ ] O botão de som liga/desliga a música e mostra "Daniel Micas Jardim da Silva".
+- [ ] Rebobinar: cena verde, chuva de caracteres e volta rápida.
 - [ ] O "Saiba mais" (janela e janela do chão) abre no visualizador em tela cheia, sem nova aba, e o inventário mostra "🔗 saiba mais visitado".
 - [ ] Os contatos do topo (LinkedIn, GitHub, WhatsApp, currículo) abrem direto em nova aba e o e-mail abre o app de e-mail, sem aviso de saída.
 - [ ] Rebobinar para a bifurcação e para o início: os recortes conquistados **continuam destruídos**.
 - [ ] Apertar F5: os recortes conquistados continuam destruídos e o contador continua igual.
 - [ ] Com recortes faltando, recarregar a página (F5) → aviso do navegador → "Cancelar/Ficar" → Game Over.
-- [ ] Botão ↺ Resetar → confirmação → "Sim, resetar tudo" → inventário volta a 0.
+- [ ] Menu ⟲ Rebobinar → ↺ Resetar tudo → confirmação → "Sim, resetar tudo" → inventário volta a 0.
 - [ ] "Manter o inventário" → volta ao início com tudo conquistado.
 - [ ] "Resetar tudo" → contador volta a `0/…` e todos os recortes ficam de pé.
 - [ ] Coletar tudo e recarregar a página → nenhum aviso aparece.
-- [ ] O contador "Visitantes: … (desde …)" aparece na tela inicial e embaixo da barra de conhecimento.
+- [ ] O contador "Visitantes: … (desde 22/10/2026)" aparece no cabeçalho.
 - [ ] Roda do mouse / pinça do trackpad aproxima e afasta a câmera sem dar zoom na página; duplo clique volta ao normal.
-- [ ] Clicar na bike e arrastar: ela acompanha o mouse exatamente e para onde for solta.
-- [ ] Clicar no cenário e arrastar: o mapa acompanha o mouse; a bike não se mexe.
-- [ ] Arrastar a bike até um recorte: câmera lenta, aproximação e tremida, e depois tudo volta ao normal.
-- [ ] No modo celular do F12: tocar na bike e arrastar, arrastar o cenário, pinça dá zoom, toque duplo volta ao normal.
+- [ ] Atropelar um recorte: câmera lenta, aproximação e tremida, e depois tudo volta ao normal.
+- [ ] No modo celular do F12: cabeçalho em duas linhas, botões nas bordas, pinça dá zoom, toque duplo volta ao normal.
 - [ ] Clicar 3 vezes seguidas no mapa abre o guia; "Não mostrar esta dica novamente" faz ele parar de aparecer.
 - [ ] A miniatura da foto aparece no canto superior esquerdo e abre a janela "Sobre a Marina" com a frase da bike.
 - [ ] A foto no céu está sutil e, com `?olhos` no endereço, a mira fica sobre os olhos em qualquer tamanho de tela.

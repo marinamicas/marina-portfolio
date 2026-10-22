@@ -38,10 +38,12 @@ let toastTl = null
  * então o aviso escondido não bloqueia cliques.
  * @param {string} message texto do aviso
  * @param {number} [seconds=3.5] tempo visível, em segundos
+ * @param {{hurt?: boolean}} [o] hurt = aviso vermelho (perdeu vida)
  */
-export function toast(message, seconds = 3.5) {
+export function toast(message, seconds = 3.5, { hurt = false } = {}) {
   const el = document.querySelector('#toast')
   el.textContent = message
+  el.classList.toggle('hurt', hurt)
   toastTl?.kill()
   toastTl = gsap
     .timeline()
@@ -87,4 +89,18 @@ export function paperBurst(cx, cy) {
       },
     )
   }
+}
+
+/** Camada com o brilho vermelho nas bordas (criada uma vez; o CSS .hurt-flash define a aparência). */
+const flash = document.createElement('div')
+flash.className = 'hurt-flash'
+flash.setAttribute('aria-hidden', 'true')
+document.body.appendChild(flash)
+
+/**
+ * Clarão vermelho nas bordas da área do jogo ao perder vida (aparece rápido e some em 0,6 s).
+ * Chamada por main.js quando a bike bate numa árvore ou encosta numa onça.
+ */
+export function hurtFlash() {
+  gsap.fromTo(flash, { opacity: 1 }, { opacity: 0, duration: REDUCED_MOTION ? 0.2 : 0.6, ease: 'power2.out', overwrite: true })
 }

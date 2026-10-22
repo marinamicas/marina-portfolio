@@ -15,7 +15,7 @@ O visitante pedala uma bicicleta de papel por um mundo de colagem digital, atrop
    - 4.1 [Como alterar o favicon](#41-como-alterar-o-favicon)
    - 4.2 [Como atualizar/adicionar objetos do jogo (recortes, placas, zonas)](#42-como-atualizaradicionar-objetos-do-jogo)
    - 4.3 [Como alterar imagens e ativos (foto de perfil, prévia, ícones, recortes, currículo)](#43-como-alterar-imagens-e-ativos)
-   - 4.4 [Como ajustar parâmetros do jogo (velocidade, zoom, cores, pan, partículas, céu)](#44-como-ajustar-parâmetros-do-jogo)
+   - 4.4 [Como ajustar parâmetros do jogo (velocidade, vidas, floresta, zoom, cores, som, céu)](#44-como-ajustar-parâmetros-do-jogo)
    - 4.5 [Como manter o SEO (título, descrição, prévia de compartilhamento)](#45-como-manter-o-seo)
    - 4.6 [Textos e o easter egg da bicicleta](#46-textos-e-o-easter-egg-da-bicicleta)
 5. [Publicando no GitHub Pages](#5-publicando-no-github-pages)
@@ -43,18 +43,26 @@ Por isso o código inteiro é comentado em português, de forma didática: a ide
 
 ## 2. Como jogar
 
+Ao abrir o site, um **triângulo neon** é desenhado no chão e a **bike 3D sai da terra** de dentro dele. Depois aparece a janela **"Como jogar"**, com as instruções do aparelho (celular ou computador) e um botão grande **"Ver o currículo agora"** para quem prefere ver as experiências sem jogar.
+
 | Ação | Computador | Celular/tablet |
 |---|---|---|
-| Mover a bike | clicar na bike e arrastar | tocar na bike e arrastar |
-| Olhar o mapa (pan) | clicar no cenário e arrastar | tocar no cenário e arrastar |
-| Pedalar (alternativa) | W A S D / setas, Shift acelera | — |
+| Virar | ◀ ▶ na tela, ou A D / setas laterais | ◀ ▶ na tela |
+| Pedalar / frear e ré / turbo | ▲ / ▼ / ⚡ na tela, ou W / S / Shift | ▲ / ▼ / ⚡ na tela |
+| Arrastar a bike (botões ocultos no 🎮) | clicar na bike e arrastar | tocar na bike e arrastar |
 | Zoom | roda do mouse, pinça no trackpad ou + / − | pinça com dois dedos |
-| Zoom normal + câmera na bike | duplo clique ou 0 | toque duplo |
-| Sobre a Marina (foto, apresentação, easter egg) | clicar na miniatura da foto (canto superior esquerdo) | tocar na miniatura |
+| Zoom normal | duplo clique ou 0 | toque duplo |
+| Sobre a Marina | clicar na miniatura da foto ou atropelar o primeiro recorte | tocar na miniatura ou atropelar o primeiro recorte |
 | Guia de navegação | botão **? Ajuda** | botão **? Ajuda** |
+| Som | botão 🔊 (créditos: Daniel Micas Jardim da Silva) | botão 🔊 |
 | Fechar janela | Esc | botão × |
 
-Gestos não suportados abrem um **guia de navegação** adaptado ao aparelho. A bike arrastada segue exatamente o ponto do chão sob o dedo/mouse e solta um **rastro de partículas** enquanto se move; levá-la até a borda da tela faz a câmera andar junto.
+- A **câmera segue a bike o tempo todo**. A seta neon no chão, o farol e a lanterna mostram para onde ela aponta.
+- O **teclado está sempre ativo** (acessibilidade); teclas e botões são o mesmo comando, com a mesma precisão, e funcionam juntos.
+- Com os **botões na tela visíveis**, tocar/arrastar a bike não a move. Ocultando os botões (🎮), arrastar a bike faz ela pedalar até o ponto apontado.
+- **6 vidas**: árvores e onças tiram 1; cada recorte explodido devolve 1.
+
+Gestos não suportados abrem um **guia de navegação** adaptado ao aparelho. A bike solta um **rastro de partículas** enquanto se move.
 
 ---
 
@@ -112,6 +120,13 @@ O favicon é o ícone que aparece na aba do navegador, nos favoritos e na tela i
 ### 4.2 Como atualizar/adicionar objetos do jogo
 
 Todos os objetos do jogo são **dados** (sem lógica) no arquivo [`src/data/level.js`](src/data/level.js). Os módulos 3D leem essas listas e montam o mundo sozinhos.
+
+> 📘 **Inserindo recortes de Experiências e Formações?** Siga o passo a passo completo da
+> [seção 5.0 do Manual](docs/MANUAL-DE-ATUALIZACAO.md#50--passo-a-passo-completo-inserir-recortes-de-experiências-e-formações):
+> imagem no padrão de cartão (285 px de largura), posição livre na rua, `cardSize(altura)` e conferência.
+
+Outros objetos editáveis no mesmo arquivo: `END_SIGNS` (placas de fim de rota), `CRITTERS.jaguars`
+(caminho das onças), `FOREST` (árvores e flores), `SIGNS` (placas magnéticas) e `ZONES` (câmera).
 
 #### Recortes colecionáveis (`ITEMS`)
 
@@ -188,8 +203,9 @@ Cada recorte é criado por uma chamada `item(...)`. A função monta um objeto c
 | **Imagem de prévia ao compartilhar** (WhatsApp/LinkedIn) | `public/og-image.jpg` | 1200×630 px, JPEG com **até ~300 KB** (o WhatsApp ignora imagens pesadas). Na tag `og:image` o endereço é `https://…/marina-portfolio/og-image.jpg`, **sem** `/public/`. |
 | **Favicon** | `public/favicon.svg` + `public/apple-touch-icon.png` | Veja [4.1](#41-como-alterar-o-favicon). |
 | **Ícones do topo** (LinkedIn, GitHub, e-mail, WhatsApp, CV) | `src/assets/ui/icons/*.svg` | Substitua mantendo o nome. Para um ícone novo, copie um `<a>` em `index.html` (`<nav class="hud-links">`). |
-| **Bicicleta + avatar** | `src/assets/cutouts/avatar/bike.webp` | Virada para a **direita**, rodas encostando na base, fundo transparente. |
-| **Recorte da Marina** (apresentação) | `src/assets/cutouts/intro/marina.webp` | Fundo transparente. |
+| **Bicicleta** | não usa imagem | É um modelo 3D montado em `src/world/bike.js` (cores no objeto `COLORS`). |
+| **Primeiro recorte** ("Marina Micas Jardim") | não usa imagem própria | O jogo desenha um cartão com a foto de perfil, no mesmo visual dos cartões das Experiências. |
+| **Música** | `public/som.mp3` | Troque mantendo o nome (ou ajuste `AUDIO.file`). |
 | **Placas** | `src/assets/cutouts/signs/*.webp` | `experiencias`, `formacoes`, `desenvolvimento`, `design`, `diversidade`. |
 | **Experiências / Formações** | `src/assets/cutouts/experiencias/{desenvolvimento,design,diversidade}/*.webp`, `src/assets/cutouts/formacoes/*.webp` | O nome deve ser idêntico ao campo `image` do item. |
 | **Currículo em PDF** | `public/docs/curriculo-marina-micas.pdf` | Nome exato; o botão "CV" do topo aponta para ele. **Tem que ser dentro de `public/`**: a pasta `docs/` da raiz funciona no `npm run dev`, mas não vai para o site publicado. |
@@ -212,11 +228,18 @@ A foto aparece em três lugares: miniatura no canto superior esquerdo, fundo sut
 
 | Quero mudar… | Arquivo | O que alterar |
 |---|---|---|
-| **Velocidade da bike** no teclado | `src/world/bike.js`, função `updateBike` | `const max = input.boost ? 17 : 10` → 17 m/s com Shift, 10 normal. |
+| **Velocidade, curva e precisão da bike** (teclado e botões) | `src/data/level.js`, `BIKE` | `maxSpeed: 10`, `boostSpeed: 16` (m/s), `turnRate: 2.4` (rad/s), `pivotFactor`, `accel`, `brake`, `turnSmoothing`; arraste em `BIKE.drag`. |
+| **Vidas** | `src/data/level.js`, `LIVES` | `start: 6`, `treeDamage`, `jaguarDamage`, `cutoutHeal`, `invulnerableSeconds`. |
+| **Floresta, bichos e neve** | `src/data/level.js`, `FOREST`, `CRITTERS`, `SNOW` | Quantidades, cores, caminhos das onças, transparência da neve. |
+| **Abertura** (triângulo neon) | `src/data/level.js`, `INTRO` | Tamanho, tempos e cores. |
+| **Música** | `src/data/level.js`, `AUDIO` | Arquivo (`public/som.mp3`), volume e crédito. |
+| **Placas de fim de rota** | `src/data/level.js`, `END_SIGNS` | Rota, posição e frase poética. |
 | Velocidade mínima para atropelar | `src/world/totems.js` | `const HIT_SPEED = 2` (m/s). |
 | **Intensidade do zoom** (roda do mouse, pinça, teclas) | `src/core/input.js`, objeto `SETTINGS.zoom` | `wheel: 0.0014` (por pixel da roda), `trackpadPinch: 0.012`, `key: 0.16` (por toque em + / −). Maior = zoom mais rápido. |
 | Limites e suavidade do zoom | `src/core/CameraRig.js`, `constructor` | `zoomLimits = { min: 0.45, max: 1.9 }` (0.45 = bem perto; 1.9 = quase o dobro da distância); `zoomSmoothing = 14` (maior = segue o gesto mais rápido). |
-| **Sensibilidade do pan** e da borda da tela | `src/core/input.js`, `SETTINGS.drag` | `bikeHitRadius: 44` (px para "pegar" a bike), `edgeMargin: 0.1` (10% da tela perto da borda faz a câmera andar), `edgeSpeed: 28` (m/s da câmera na borda). O pan segue o dedo 1:1 (o ponto agarrado do chão fica sob o dedo). |
+| **Câmera** (quão colada na bike) | `src/main.js`, `rig.lag` | `8` jogando, `14` no rebobinar (maior = cola mais). Não existe mais pan: a câmera segue a bike sempre. |
+| Área para "pegar" a bike com o dedo | `src/core/input.js`, `SETTINGS.drag` | `bikeHitRadius: 48` (px). Só vale com os botões na tela ocultos. |
+| Botões na tela (tamanho, começar ocultos) | `main.css` `--pad-size`; `src/ui/controls.js` `DEFAULT_VISIBLE` | 64 px (58 no celular); `true` = começam visíveis. |
 | Toque duplo, toque longo | `src/core/input.js`, `SETTINGS.tap` e `longPressMs` | `doubleGap: 320` ms entre toques; `longPressMs: 900`. |
 | **Cores do cenário** (mundo 3D) | `src/data/level.js`, `PALETTE` | Códigos `#RRGGBB`. Cor do chão: `'#17111f'` em `buildGround` (`environment.js`); das ruas: `'#2a1f3d'`. |
 | Cores das janelas, botões e HUD | `src/styles/main.css`, bloco `:root` | Mesmas variáveis (`--purple`, `--lilac`…). Mantenha igual à `PALETTE`. |
@@ -226,7 +249,8 @@ A foto aparece em três lugares: miniatura no canto superior esquerdo, fundo sut
 | **Foto no céu** (opacidade, faixa, modo) | `src/data/level.js`, `PROFILE.sky` | `opacity: 0.22` (0 a 1), `fadeFrom`/`fadeTo` (de onde até onde a foto some, fração da altura), `blend: 'screen'` ou `'normal'`. |
 | Efeito do atropelo (câmera lenta, tremida) | `src/main.js`, `cinematicHit()` | `timeScale: 0.12` (12% da velocidade), `'+=0.35'` (quanto tempo fica lento), `rig.shake(0.5, 0.45)`. |
 | Quando o guia de gestos aparece | `src/core/invalidGestures.js`, `RULES` | `threshold` (repetições) e `windowMs`. |
-| Easter egg da bike (atraso do aviso) | `src/main.js`, `maybeTellBikeStory()` | `gsap.delayedCall(1.5, …)` segundos após o primeiro arraste. |
+| Easter egg da bike (quando o aviso aparece) | `src/main.js`, `maybeTellBikeStory()` | `movingFor < 4`: segundos pedalando até o aviso. |
+| Rebobinar (velocidade e visual Matrix) | `src/core/timeMachine.js` e `src/ui/matrix.js` | `total / 45` (m/s); `GLYPHS`, `FONT_PX`, `SPEED` da chuva. |
 
 ### 4.5 Como manter o SEO
 
@@ -287,44 +311,53 @@ marina-portfolio/
 │   ├── apple-touch-icon.png # ícone 180×180 (iPhone/iPad)
 │   ├── og-image.jpg         # prévia 1200×630 ao compartilhar (troque pela sua)
 │   ├── robots.txt, sitemap.xml
+│   ├── som.mp3              # música de fundo (Daniel Micas Jardim da Silva)
 │   └── docs/                # currículo em PDF
-├── docs/MANUAL-DE-ATUALIZACAO.md  # manual passo a passo para iniciantes
+├── docs/MANUAL-DE-ATUALIZACAO.md  # manual passo a passo para iniciantes (★ seção 5.0: inserir recortes)
 └── src/
-    ├── main.js              # "maestro": inicialização, loop do jogo, atropelos, tela inicial, easter egg
-    ├── data/level.js        # ★ CONTEÚDO: textos, recortes (ITEMS), ruas, placas, câmera, PROFILE, PARTICLES
-    ├── styles/main.css      # HUD, janelas, miniatura da foto, camada do céu, efeitos
+    ├── main.js              # "maestro": inicialização, abertura, loop, atropelos, batidas e vidas
+    ├── data/level.js        # ★ CONTEÚDO E AJUSTES: textos, ITEMS, ruas, placas, BIKE, LIVES, FOREST, CRITTERS, SNOW, INTRO, AUDIO…
+    ├── styles/main.css      # cabeçalho sólido, botões, controles na tela, janelas, rebobinar Matrix
     ├── assets/
     │   ├── images/          # ★ foto de perfil (profile.jpeg)
-    │   ├── cutouts/         # ★ recortes (bike, Marina, placas, experiências, formações)
+    │   ├── cutouts/         # ★ recortes (experiências, formações, placas)
     │   └── ui/icons/        # ícones do topo
     ├── core/
-    │   ├── stage.js         # renderer, cena, câmera, luzes
+    │   ├── stage.js         # renderer, cena, câmera, luzes e área do canvas (abaixo do cabeçalho)
     │   ├── physics.js       # mundo cannon-es + materiais de contato
-    │   ├── CameraRig.js     # câmera que segue a bike: zoom, pan, enquadramentos, tremida
-    │   ├── input.js         # teclado, roda do mouse/trackpad (zoom), sensibilidades (SETTINGS)
-    │   ├── pointerControls.js # Pointer Events: arrastar a bike, arrastar o cenário, pinça
+    │   ├── CameraRig.js     # câmera que segue a bike sempre: zoom, enquadramentos, tremida
+    │   ├── input.js         # teclado + botões na tela (mesmo comando), zoom, sensibilidades
+    │   ├── pointerControls.js # arrastar a bike (botões ocultos), pinça, toque duplo
     │   ├── device.js        # detecta touch x mouse
     │   ├── invalidGestures.js # detector de gestos não suportados
-    │   ├── state.js         # progresso no sessionStorage
-    │   ├── timeMachine.js   # gravação da trajetória, rebobinar, viagens do inventário
+    │   ├── state.js         # inventário e vidas no sessionStorage
+    │   ├── timeMachine.js   # gravação da trajetória, rebobinar rápido, viagens do inventário
     │   └── visitors.js      # contador de visitantes (API Abacus)
     ├── world/
-    │   ├── environment.js   # chão, ruas, colagem, prismas físicos, placas, horizonte
-    │   ├── bike.js          # avatar 2D + corpo físico + arraste
+    │   ├── environment.js   # chão, ruas, prismas físicos, placas, placas de fim de rota, horizonte
+    │   ├── bike.js          # bike 3D low-poly + corpo físico + arraste + seta de direção
+    │   ├── intro.js         # abertura: triângulo neon e bike saindo da terra
+    │   ├── forest.js        # árvores (com colisão) e flores triangulares
+    │   ├── critters.js      # borboletas, pássaros, coelhos e onças
+    │   ├── snow.js          # neve de triângulos
     │   ├── totems.js        # recortes colecionáveis + explosão em papel
-    │   └── particles.js     # ★ rastro de partículas da bike (THREE.Points + shader)
+    │   └── particles.js     # rastro de partículas da bike e explosões (THREE.Points + shader)
     ├── ui/
-    │   ├── profile.js       # ★ foto de perfil: miniatura, céu ancorado nos olhos, janela "Sobre"
+    │   ├── onboarding.js    # janela inicial "Como jogar" + botão do currículo
+    │   ├── controls.js      # botões de direção ◀ ▶ ▲ ▼ ⚡ e botão 🎮
+    │   ├── audio.js         # música e botão de som com créditos
+    │   ├── matrix.js        # chuva de caracteres do rebobinar
+    │   ├── profile.js       # foto de perfil: miniatura, céu ancorado nos olhos, janela "Sobre"
     │   ├── modal.js         # janela flutuante
-    │   ├── screens.js       # HUD, item, inventário, zerou, game over, resetar, contador
-    │   ├── guide.js         # guia de navegação (touch/PC)
+    │   ├── screens.js       # barra, vidas, item, inventário, zerou, game over, fim das vidas, resetar
+    │   ├── guide.js         # instruções dinâmicas (aparelho + modo de controle) e guia de gestos
     │   ├── pins.js          # janelas "saiba mais" presas no chão
     │   ├── viewer.js        # visualizador em tela cheia para links externos
-    │   └── effects.js       # toast e papeizinhos na tela
-    └── utils/               # texturas em canvas, carregamento de recortes, helpers
+    │   └── effects.js       # toast, papeizinhos e clarão de dano
+    └── utils/               # texturas em canvas, carregamento de recortes, foto de perfil, helpers
 ```
 
-**Como a foto do céu funciona:** a câmera do jogo olha para o chão, então o céu de verdade quase nunca aparece. A foto é uma camada HTML fixa por cima do canvas, em modo de mistura `screen` (só clareia o que está escuro), o que dá o efeito de fundo sem cobrir nada. Como a camada é fixa na janela, pan, zoom e rotação da câmera não a afetam; `src/ui/profile.js` recalcula tamanho e posição a cada redimensionamento mantendo os olhos no ponto `PROFILE.anchor`.
+**Como a foto do céu funciona:** a câmera do jogo olha para o chão, então o céu de verdade quase nunca aparece. A foto é uma camada HTML fixa por cima do canvas, em modo de mistura `screen` (só clareia o que está escuro), o que dá o efeito de fundo sem cobrir nada. Como a camada é fixa na área do jogo, zoom e movimento da câmera não a afetam; `src/ui/profile.js` recalcula tamanho e posição a cada redimensionamento mantendo os olhos no ponto `PROFILE.anchor`.
 
 **Como as partículas funcionam:** `src/world/particles.js` reserva um pool de `PARTICLES.max` partículas em uma única malha `THREE.Points`. A cada quadro mede quanto a bike andou, solta novas partículas ao longo do trecho (`perMeter`) e envelhece as vivas; um shader encolhe o tamanho e reduz a transparência conforme a vida (1 → 0).
 
@@ -334,8 +367,12 @@ marina-portfolio/
 
 - **Progresso:** cada recorte atropelado conta uma vez e fica em `sessionStorage`, válido enquanto a aba estiver aberta.
 - **Estado final mantido:** recortes conquistados continuam destruídos, com a janela "saiba mais" presa no chão, ao rebobinar e ao recarregar a página.
-- **Rebobinar:** para a bifurcação das placas ou para o início. Os objetos soltos voltam ao lugar; o inventário é mantido.
-- **Reset completo:** botão **↺ Resetar** (com confirmação) ou **Tentar novamente → Resetar tudo** no Game Over.
+- **Rebobinar:** para a bifurcação das placas ou para o início, em alta velocidade e com visual "Matrix" (cena verde e chuva de caracteres). Os objetos soltos voltam ao lugar; o inventário é mantido.
+- **Reset completo:** menu **⟲ Rebobinar → ↺ Resetar tudo** (com confirmação) ou **Tentar novamente → Resetar tudo**.
+- **Vidas:** 6 no início; árvore ou onça tira 1, recorte explodido devolve 1 (máximo 6). Com zero aparece **"Fim das vidas!"** (tentar de novo, ver currículo ou ir aos contatos).
+- **Primeiro recorte:** cartão com a foto; ao ser atropelado abre a janela "Sobre a Marina" e depois fica preso no chão como os outros.
+- **Fim de rota:** cada rua termina numa placa com uma frase poética.
+- **Cabeçalho:** fundo sólido; o canvas do jogo começa abaixo dele, então os contatos ficam sempre visíveis.
 - **Placas magnéticas:** ao passar perto de uma placa sem virar, a bike é puxada suavemente para a rua que ela indica.
 - **Inventário:** mostra os recortes conquistados e se o link "saiba mais" foi aberto. Clicar num recorte leva a bike até ele.
 - **Game Over:** só ao tentar **fechar ou recarregar a aba** sem 100% do inventário (aviso nativo do navegador; se a pessoa ficar, aparece o Game Over).

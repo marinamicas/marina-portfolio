@@ -1,29 +1,33 @@
-import { ITEMS } from '../data/level.js'
+import { ITEMS, LIVES } from '../data/level.js'
 
 /* ==========================================================================
-   PROGRESSO DO JOGADOR (inventário salvo na aba)
+   PROGRESSO DO JOGADOR (inventário e vidas salvos na aba)
 
    Papel deste arquivo:
    - Guarda o estado do jogo que precisa sobreviver a um F5: quais recortes
      já foram atropelados (`collected`), quais links "saiba mais" já foram
-     abertos (`links`) e se a janela "Você zerou!" já apareceu (`won`).
+     abertos (`links`), se a janela "Você zerou!" já apareceu (`won`) e
+     quantas vidas restam (`lives`).
    - Fica só no sessionStorage: vale enquanto a aba estiver aberta e some ao
      fechá-la. Nada é enviado a servidor.
    - Avisa quem se inscreveu (onStateChange) toda vez que algo muda, para o
-     HUD (barra de conhecimento, contador do inventário) se atualizar sozinho.
+     HUD (barra de conhecimento, contador do inventário, corações) se atualizar sozinho.
 
-   Dependências: ITEMS de src/data/level.js (para validar os ids).
-   Quem usa: main.js (collect), screens.js (progress, isComplete, markLink,
-   markWon, onStateChange), pins.js (markLink), timeMachine.js (resetProgress).
+   Dependências: ITEMS e LIVES de src/data/level.js.
+   Quem usa: main.js (collect, loseLife, gainLife), screens.js (progress,
+   isComplete, markLink, markWon, onStateChange, resetLives), pins.js (markLink),
+   timeMachine.js (resetProgress).
 
    Onde mexer:
-   - STORAGE_KEY: troque a versão (v1 → v2) para "esquecer" o progresso salvo
+   - STORAGE_KEY: troque a versão (v2 → v3) para "esquecer" o progresso salvo
      de todos os visitantes depois de uma mudança grande no level.
+   - Quantidade de vidas e quanto cada coisa tira/devolve: LIVES em level.js.
    - Para trocar sessionStorage por localStorage (progresso que sobrevive a
      fechar o navegador), troque nas funções load() e save().
    ========================================================================== */
-// Nome da chave no sessionStorage onde o JSON do estado é gravado
-const STORAGE_KEY = 'mmj-portfolio:v1'
+// Nome da chave no sessionStorage onde o JSON do estado é gravado.
+// v2: o recorte da apresentação mudou de comportamento e as vidas entraram no estado.
+const STORAGE_KEY = 'mmj-portfolio:v2'
 
 /**
  * Lê o estado salvo no sessionStorage.
@@ -50,6 +54,15 @@ const VALID_IDS = new Set(ITEMS.map((it) => it.id))
  */
 const validIds = (list) => (Array.isArray(list) ? [...new Set(list)].filter((id) => VALID_IDS.has(id)) : [])
 
+/**
+ * Vidas salvas válidas: número inteiro entre 1 e LIVES.start. Qualquer outra coisa
+ * (nada salvo, 0, texto) começa com LIVES.start. Zero não é restaurado: quem recarregou
+ * a página na tela de "Fim das vidas" recomeça com as vidas cheias.
+ * @param {unknown} n
+ * @returns {number}
+ */
+const validLives = (n) => (Number.isInteger(n) && n > 0 && n <= LIVES.start ? n : LIVES.start)
+
 // Estado carregado uma vez, ao abrir a página
 const saved = load()
 /**
@@ -57,8 +70,14 @@ const saved = load()
  * - collected: ids dos recortes já atropelados (na ordem em que foram conquistados)
  * - links:     ids dos recortes cujo "saiba mais" já foi clicado
  * - won:       true depois que a janela "Você zerou!" apareceu uma vez
+ * - lives:     vidas restantes (0 a LIVES.start)
  */
-export const state = { collected: validIds(saved.collected), links: validIds(saved.links), won: saved.won === true }
+export const state = {
+  collected: validIds(saved.collected),
+  links: validIds(saved.links),
+  won: saved.won === true,
+  lives: validLives(saved.lives),
+}
 // Funções avisadas a cada save() (ex.: updateHUD em screens.js)
 const listeners = []
 
@@ -113,10 +132,40 @@ export function markWon() {
   save()
 }
 
-/** Apaga todo o inventário (usado só em Sair → Tentar novamente → Resetar tudo). */
+/**
+ * Tira vidas (batida em árvore ou onça). Nunca fica abaixo de zero.
+ * @param {number} [amount=1]
+ * @returns {number} vidas restantes depois do dano
+ */
+export function loseLife(amount = 1) {
+  state.lives = Math.max(0, state.lives - amount)
+  save()
+  return state.lives
+}
+
+/**
+ * Devolve vidas (explodir um recorte). Nunca passa de LIVES.start.
+ * @param {number} [amount=1]
+ * @returns {boolean} true se ganhou de fato (false se já estava com as vidas cheias)
+ */
+export function gainLife(amount = 1) {
+  if (state.lives >= LIVES.start) return false
+  state.lives = Math.min(LIVES.start, state.lives + amount)
+  save()
+  return true
+}
+
+/** Enche as vidas de novo (Tentar novamente / Manter o inventário). */
+export function resetLives() {
+  state.lives = LIVES.start
+  save()
+}
+
+/** Apaga todo o inventário e enche as vidas (botão Resetar ou "Resetar tudo"). */
 export function resetProgress() {
   state.collected = []
   state.links = []
   state.won = false
+  state.lives = LIVES.start
   save()
 }

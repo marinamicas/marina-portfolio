@@ -8,9 +8,11 @@
      Open Graph (prévia no WhatsApp/LinkedIn/Facebook), Twitter Cards,
      dados estruturados JSON-LD (Schema.org Person + CreativeWork),
      favicon, theme-color e um CSS mínimo de segurança.
-  2. <body>: o <canvas> do mundo 3D, a camada da foto no "céu", o HUD
-     (miniatura da foto, contatos, barra de conhecimento, botões), a janela
-     flutuante (modal), a tela inicial, o aviso de WebGL e o <script> do jogo.
+  2. <body>: o <canvas> do mundo 3D (começa abaixo do cabeçalho), a camada da
+     foto no "céu", o cabeçalho sólido (miniatura, contatos, barra, vidas), os
+     botões de ação (Rebobinar com Resetar dentro, Inventário, Ajuda, Botões,
+     Som), os botões de direção nas bordas, a janela flutuante (modal), a tela
+     de carregamento, o aviso de WebGL e o <script> do jogo.
 
   Quem faz a página funcionar é src/main.js (carregado no fim do <body>).
   O CSS fica em src/styles/main.css (importado pelo main.js).
@@ -150,13 +152,18 @@
   -->
   <div class="sky-photo hidden" aria-hidden="true"><img alt="" decoding="async" /></div>
 
-  <!-- HUD: miniatura da foto de perfil (canto superior esquerdo). Clique abre a janela "Sobre a Marina" -->
-  <button class="hud-avatar" type="button" aria-label="Sobre a Marina Micas" title="Sobre a Marina">
-    <img alt="" decoding="async" />
-  </button>
-
-  <!-- HUD: header fixo com recortes de contato. Os mesmos links são copiados para as janelas "Zerou", "Contatos" e "Sobre" -->
+  <!--
+    HUD: cabeçalho fixo com FUNDO SÓLIDO. O canvas do jogo começa logo abaixo dele (nunca o cobre):
+    src/core/stage.js mede a altura deste <header> e grava em --hud-h, usada pelo main.css.
+    Contém: miniatura da foto (abre "Sobre a Marina"), contatos, barra de conhecimento, vidas e visitantes.
+    Os links de contato são copiados para as janelas "Zerou", "Contatos" e "Sobre".
+  -->
   <header class="hud-header">
+    <!-- Miniatura da foto de perfil. Clique abre a janela "Sobre a Marina" (src/ui/profile.js) -->
+    <button class="hud-avatar" type="button" aria-label="Sobre a Marina Micas" title="Sobre a Marina">
+      <img alt="" decoding="async" />
+    </button>
+
     <!--
       Contatos abrem DIRETO no destino, sem passar pelo visualizador em tela cheia (src/ui/viewer.js):
       - data-viewer-skip: o visualizador ignora o link;
@@ -189,30 +196,65 @@
         <img src="/src/assets/ui/icons/curriculo.png" alt="" /><span>Currículo (PDF)</span>
       </a>
     </nav>
+
+    <!-- Barra "Conhecimento sobre Marina" + vidas + contador de visitantes (atualizados por src/ui/screens.js) -->
+    <div class="hud-status">
+      <div class="hud-progress" aria-live="polite">
+        <span id="progress-label">Conhecimento sobre Marina: 0%</span>
+        <div class="bar"><div id="progress-fill"></div></div>
+      </div>
+      <!-- Vidas: um coração por vida (LIVES.start em src/data/level.js). role="img" + aria-label para leitores de tela -->
+      <div class="hud-lives" id="lives" role="img" aria-label="Vidas"></div>
+      <!-- [data-visitors]: todos os elementos com este atributo recebem o texto do contador -->
+      <small class="visitors" data-visitors></small>
+    </div>
   </header>
 
-  <!-- HUD: barra "Conhecimento sobre Marina" (atualizada por src/ui/screens.js) + contador de visitantes -->
-  <div class="hud-progress" aria-live="polite">
-    <span id="progress-label">Conhecimento sobre Marina: 0%</span>
-    <div class="bar"><div id="progress-fill"></div></div>
-    <!-- [data-visitors]: todos os elementos com este atributo recebem o texto do contador -->
-    <small class="visitors" data-visitors></small>
-  </div>
-
-  <!-- HUD: botões de ação (canto inferior esquerdo). Os cliques são tratados em src/ui/screens.js e src/ui/guide.js -->
+  <!-- HUD: botões de ação (logo abaixo do cabeçalho, à esquerda). Cliques tratados em src/ui/screens.js,
+       src/ui/guide.js, src/ui/controls.js e src/ui/audio.js -->
   <div class="hud-actions">
     <div class="rewind">
-      <!-- Abre o menu com as duas opções de rebobinar -->
-      <button id="btn-rewind" aria-haspopup="true" aria-expanded="false">⟲ Rebobinar</button>
+      <!-- Abre o menu: rebobinar para a bifurcação, para o início ou resetar tudo -->
+      <button id="btn-rewind" aria-haspopup="true" aria-expanded="false"><span aria-hidden="true">⟲</span> <span class="label">Rebobinar</span></button>
       <div class="rewind-menu" role="menu">
         <button id="btn-rewind-fork" role="menuitem">⟲ Para a bifurcação</button>
         <button id="btn-rewind-start" role="menuitem">⟲⟲ Para o início</button>
+        <!-- Resetar mora aqui dentro: apaga o inventário (pede confirmação antes) -->
+        <button id="btn-reset" role="menuitem" class="danger">↺ Resetar tudo</button>
       </div>
     </div>
     <!-- #inventory-count mostra "conquistados/total" -->
-    <button id="btn-inventory">✂ Inventário <span id="inventory-count">0/0</span></button>
-    <button id="btn-help" aria-label="Como navegar">? Ajuda</button>
-    <button id="btn-reset">↺ Resetar</button>
+    <button id="btn-inventory"><span aria-hidden="true">✂</span> <span class="label">Inventário</span> <span id="inventory-count">0/0</span></button>
+    <button id="btn-help" aria-label="Como jogar"><span aria-hidden="true">?</span> <span class="label">Ajuda</span></button>
+    <!-- Mostra/oculta os botões de direção na tela. Ocultos = arrastar a bike com o dedo/mouse -->
+    <button id="btn-controls" aria-pressed="true"><span aria-hidden="true">🎮</span> <span class="label">Botões</span></button>
+    <!-- Liga/desliga a música e mostra os créditos do autor (src/ui/audio.js) -->
+    <button id="btn-sound" class="sound" aria-pressed="false" title="Música de Daniel Micas Jardim da Silva">
+      <span class="sound-icon" aria-hidden="true">🔇</span>
+      <span class="sound-text"><strong>Som</strong><small>♪ Daniel Micas Jardim da Silva</small></span>
+    </button>
+  </div>
+
+  <!--
+    Botões de direção fixos nas bordas da tela (src/ui/controls.js).
+    - Esquerda: virar ◀ ▶. Direita: acelerar ▲, ré/freio ▼ e turbo ⚡.
+    - Cada botão aceita um dedo próprio: dá para virar e acelerar ao mesmo tempo.
+    - Eles escrevem no mesmo lugar que o teclado (core/input.js), então a precisão é idêntica.
+    - Com os botões visíveis, tocar/arrastar a bike não a move. Ocultos (botão 🎮), arrastar volta a funcionar.
+    data-key = nome do comando enviado ao input.
+  -->
+  <div class="touch-controls" aria-label="Controles da bike">
+    <div class="pad pad-left">
+      <button type="button" data-key="left" aria-label="Virar à esquerda">◀</button>
+      <button type="button" data-key="right" aria-label="Virar à direita">▶</button>
+    </div>
+    <div class="pad pad-right">
+      <button type="button" data-key="boost" class="small" aria-label="Turbo">⚡</button>
+      <div class="pad-col">
+        <button type="button" data-key="forward" aria-label="Acelerar">▲</button>
+        <button type="button" data-key="back" aria-label="Ré e freio">▼</button>
+      </div>
+    </div>
   </div>
 
   <!-- Aviso rápido (toast) roxo embaixo da tela. Texto e animação em src/ui/effects.js -->
@@ -227,18 +269,13 @@
     </div>
   </div>
 
-  <!-- Tela inicial: cobre tudo até o clique em "Pedalar". O botão só habilita quando os recortes carregam (src/main.js) -->
-  <section id="start-screen">
-    <div class="start-card">
-      <p class="tag">Portfólio gamificado</p>
-      <h1>Marina Micas<br />Jardim</h1>
-      <p>Arte + tecnologia. Leve a bike pelas ruas de Experiências e Formações e atropele os recortes para desvendar a trajetória.</p>
-      <button id="btn-start" class="btn" disabled>Recortando papéis…</button>
-      <small class="visitors" data-visitors></small>
-      <!-- Dica de controles: o CSS mostra só a versão do tipo de tela do visitante (dedo x mouse) -->
-      <small class="only-desktop">Clique na bike e arraste até os recortes · arraste o cenário para olhar em volta · roda do mouse para zoom</small>
-      <small class="only-touch">Toque na bike e arraste até os recortes · arraste o cenário para olhar em volta · pinça para zoom</small>
-    </div>
+  <!--
+    Tela de carregamento: aparece só enquanto as imagens dos recortes carregam.
+    Depois some e começa a abertura (triângulo neon + bike saindo da terra, src/world/intro.js),
+    seguida da janela de instruções (src/ui/onboarding.js).
+  -->
+  <section id="start-screen" aria-live="polite">
+    <p class="loading"><span class="loading-tri" aria-hidden="true"></span> Recortando papéis…</p>
   </section>
 
   <!-- Mostrado por src/core/stage.js quando o navegador não consegue criar o WebGL -->

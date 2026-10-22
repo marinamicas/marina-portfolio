@@ -1,6 +1,6 @@
 import gsap from 'gsap'
-import { GROUPS, ITEMS, TEXTS } from '../data/level.js'
-import { isComplete, markLink, markWon, onStateChange, progress, state } from '../core/state.js'
+import { GROUPS, ITEMS, LIVES, TEXTS } from '../data/level.js'
+import { isComplete, markLink, markWon, onStateChange, progress, resetLives, state } from '../core/state.js'
 import { hasReturnPoint, returnToPrevious, rewind, travelTo } from '../core/timeMachine.js'
 import { ui } from './modal.js'
 import { loadVisitors, visitorsSinceLabel } from '../core/visitors.js'
@@ -11,10 +11,11 @@ import { escapeHTML } from '../utils/helpers.js'
    TELAS E HUD
 
    Responsável por tudo o que é "janela" e por manter o HUD atualizado:
-   - HUD: barra "Conhecimento sobre Marina: X%" e contador "X/Y" do Inventário.
+   - HUD: barra "Conhecimento sobre Marina: X%", contador "X/Y" do Inventário e
+     corações das vidas (renderLives).
    - Janelas (abertas em ui.open, src/ui/modal.js): recorte atropelado, "Você
-     zerou!", "Como quer recomeçar?", Game Over, confirmação do Resetar,
-     Contatos e Inventário.
+     zerou!", "Como quer recomeçar?", Game Over, "Fim das vidas!", confirmação do
+     Resetar (o botão fica dentro do menu do Rebobinar), Contatos e Inventário.
    - Aviso ao fechar/recarregar a aba sem 100% (beforeunload → Game Over).
    - Contador de visitantes (texto nos elementos [data-visitors]).
    - Cliques nos botões das janelas (data-action) e do HUD (Rebobinar,
@@ -36,16 +37,33 @@ import { escapeHTML } from '../utils/helpers.js'
 const $ = (s) => document.querySelector(s)
 
 /* ---------------- HUD ---------------- */
-/** Elementos do HUD: rótulo da porcentagem, preenchimento da barra e contador do botão Inventário. */
-const hud = { label: $('#progress-label'), fill: $('#progress-fill'), count: $('#inventory-count') }
+/** Elementos do HUD: rótulo da porcentagem, preenchimento da barra, contador do Inventário e corações. */
+const hud = { label: $('#progress-label'), fill: $('#progress-fill'), count: $('#inventory-count'), lives: $('#lives') }
 
 /** Quantidade de recortes na última atualização do HUD: serve para animar só quando entra um novo. */
 let lastCount = state.collected.length
+/** Vidas na última atualização: serve para animar o coração que mudou. */
+let lastLives = state.lives
 
 /**
- * Atualiza a porcentagem, o contador X/Y e a largura da barra. Se entrou um recorte novo,
- * o contador dá um "pulo" (escala 1.8 → 1). Chamada automaticamente a cada mudança de
- * estado (onStateChange) e manualmente por main.js na inicialização.
+ * Desenha os corações: um por vida possível (LIVES.start). Cheios = vidas restantes,
+ * vazios = perdidas. O coração que acabou de mudar dá um "pulo".
+ */
+function renderLives() {
+  if (!hud.lives) return
+  hud.lives.innerHTML = Array.from({ length: LIVES.start }, (_, i) => `<span class="heart ${i < state.lives ? 'full' : 'empty'}">${i < state.lives ? '♥' : '♡'}</span>`).join('')
+  hud.lives.setAttribute('aria-label', `Vidas: ${state.lives} de ${LIVES.start}`)
+  if (state.lives !== lastLives) {
+    const changed = hud.lives.children[Math.min(state.lives, lastLives)]
+    if (changed) gsap.fromTo(changed, { scale: 2 }, { scale: 1, duration: 0.5, ease: 'back.out(3)' })
+  }
+  lastLives = state.lives
+}
+
+/**
+ * Atualiza a porcentagem, o contador X/Y, a largura da barra e os corações. Se entrou um
+ * recorte novo, o contador dá um "pulo" (escala 1.8 → 1). Chamada automaticamente a cada
+ * mudança de estado (onStateChange) e manualmente por main.js na inicialização.
  */
 export function updateHUD() {
   const pct = Math.round(progress() * 100)
@@ -57,6 +75,7 @@ export function updateHUD() {
   }
   lastCount = state.collected.length
   gsap.to(hud.fill, { width: `${pct}%`, duration: 0.6, ease: 'power2.out' })
+  renderLives()
 }
 onStateChange(updateHUD) // toda vez que o progresso muda (collect, markLink, reset…), o HUD acompanha
 
@@ -107,7 +126,7 @@ export function showWin() {
  * Com o inventário vazio não há o que perguntar: só volta ao início.
  */
 export function showRetryChoice() {
-  if (!state.collected.length) return rewind('start') // nada a perder: só volta ao início
+  if (!state.collected.length) return restartKeep() // nada a perder: só volta ao início (vidas cheias)
   ui.open(
     `<p class="tag">${state.collected.length}/${ITEMS.length} recortes no inventário</p>
      <h2>Como quer recomeçar?</h2>
@@ -134,7 +153,33 @@ export function showGameOver() {
   )
 }
 
-/** Botão ↺ Resetar: confirma antes de apagar todo o inventário e recomeçar do zero. */
+/**
+ * Fim das vidas: as vidas chegaram a zero (batidas em árvores/onças). A bike fica parada
+ * até a pessoa escolher: tentar de novo (vidas cheias, pergunta se mantém o inventário),
+ * ver o currículo direto ou ir aos contatos. Não dá para "continuar" sem vidas.
+ */
+export function showLivesOver() {
+  ui.open(
+    `<p class="tag">${Math.round(progress() * 100)}% da trajetória · 0 vidas</p>
+     <h2>Fim das vidas!</h2>
+     <p>${TEXTS.livesOver}</p>
+     <div class="actions">
+       <button class="btn" data-action="retry">Tentar novamente</button>
+       <a class="btn" href="./docs/curriculo-marina-micas.pdf" target="_blank" rel="noopener" data-viewer-skip>Ver currículo</a>
+       <button class="btn ghost" data-action="contacts">Ir aos contatos</button>
+     </div>`,
+    // Fechou sem escolher (×, Esc, clique fora): recomeça do início mantendo o inventário, com vidas cheias
+    { className: 'game-over', onClose: () => state.lives <= 0 && restartKeep() },
+  )
+}
+
+/** Volta ao início mantendo o inventário, com as vidas cheias. */
+function restartKeep() {
+  resetLives()
+  rewind('start')
+}
+
+/** Botão ↺ Resetar tudo (menu do Rebobinar): confirma antes de apagar todo o inventário e recomeçar do zero. */
 export function showResetConfirm() {
   const n = state.collected.length
   ui.open(
@@ -257,8 +302,8 @@ ui.content.addEventListener('click', (e) => {
     case 'retry': // "Tentar novamente" / "Jogar de novo"
       showRetryChoice()
       break
-    case 'restart-keep': // volta ao início mantendo o inventário
-      rewind('start')
+    case 'restart-keep': // volta ao início mantendo o inventário (e enche as vidas)
+      restartKeep()
       break
     case 'restart-reset': // "Resetar tudo" da pergunta de recomeço
     case 'confirm-reset': // "Sim, resetar tudo" do botão ↺ Resetar
@@ -297,7 +342,12 @@ document.addEventListener('pointerdown', (e) => {
   if (!rewindBox.contains(e.target)) toggleRewindMenu(false)
 })
 $('#btn-inventory').addEventListener('click', showInventory)
-$('#btn-reset').addEventListener('click', showResetConfirm)
+// "↺ Resetar tudo" fica dentro do menu do Rebobinar: fecha o menu e pede confirmação
+$('#btn-reset').addEventListener('click', () => {
+  toggleRewindMenu(false)
+  showResetConfirm()
+})
 
 // Botões do HUD não devem "roubar" o teclado da bike: depois do clique, tiram o foco de si mesmos
 document.querySelectorAll('.hud-actions button').forEach((b) => b.addEventListener('click', () => b.blur()))
+renderLives() // corações já aparecem antes do primeiro updateHUD

@@ -2,19 +2,21 @@ import * as THREE from 'three'
 import * as CANNON from 'cannon-es'
 import { scene, billboards } from '../core/stage.js'
 import { world } from '../core/physics.js'
-import { PALETTE, ROADS, ROAD_WIDTH, SIGNS, TEXTS } from '../data/level.js'
+import { END_SIGNS, HORIZON_NEON, PALETTE, ROADS, ROAD_WIDTH, SIGNS, TEXTS } from '../data/level.js'
 import { rand, nearRoad } from '../utils/helpers.js'
-import { applyCutout, makeCutoutTexture, makePaperTexture, makeTextPlane } from '../utils/textures.js'
+import { applyCutout, makeCutoutTexture, makeEndSignTexture, makePaperTexture, makeTextPlane } from '../utils/textures.js'
 
 /* ==========================================================================
    CENÁRIO
 
    Papel deste arquivo: montar tudo o que é "mundo" além da bike e dos recortes:
    - chão de papel e ruas (buildGround);
-   - triângulos de colagem flutuando e caídos no chão (buildDecor);
+   - triângulos de colagem caídos no chão (buildDecor);
    - prismas triangulares com física que a bike empurra (buildProps);
    - placas magnéticas com poste e ímã (buildSigns);
+   - placas de fim de rota com frases poéticas (buildEndSigns);
    - linha do horizonte, nuvem de triângulos e a frase final (buildHorizon).
+   (Floresta, bichos e neve ficam em forest.js, critters.js e snow.js.)
    E animar isso a cada frame (syncProps, animateEnvironment).
 
    Depende de: three, cannon-es, stage.js (scene, billboards), physics.js (world),
@@ -25,15 +27,16 @@ import { applyCutout, makeCutoutTexture, makePaperTexture, makeTextPlane } from 
 
    Onde mexer:
    - Cores do chão/ruas: makePaperTexture('#17111f', 40) e ('#2a1f3d', 2) em buildGround.
-   - Quantidade de enfeites: `i < 200` (flutuantes) e `i < 90` (no chão) em buildDecor.
+   - Quantidade de triângulos no chão: `i < 90` em buildDecor.
+   - Placas de fim de rota: textos e posições em END_SIGNS (level.js); desenho em makeEndSignTexture (textures.js).
    - Quantidade de prismas: `placed < 40` em buildProps.
    - Tamanho das placas: PlaneGeometry(3.6, 1.7) e altura `plate.position.y = 3.1`.
    - Posição do horizonte: `line.position` (z = -205) e `horizon.position` (y = 13, z = -225).
    ========================================================================== */
 
 // Listas públicas preenchidas pelas funções build* (vazias até buildEnvironment rodar)
-export const decor = [] // triângulos flutuantes (só visuais): { mesh, baseY, phase, spin }
 export const props = [] // prismas triangulares empurráveis (com física): { mesh, body, home }
+export const endSigns = [] // placas de fim de rota: { ...dados de END_SIGNS, group, plate }
 export const signs = [] // placas magnéticas: { ...dados de SIGNS, group, plate, magnet }
 export const horizon = new THREE.Group() // nuvem + frase final (segue a bike no eixo X)
 
@@ -80,17 +83,13 @@ function buildGround() {
 }
 
 /**
- * Triângulos flutuantes decorativos (sem física), longe das ruas para não atrapalhar.
+ * Triângulos "colados" no chão, como recortes caídos (sem física).
+ * (Os triângulos que flutuavam no ar viraram a neve de src/world/snow.js.)
  *
  * - Geometria: um único triângulo (3 vértices) compartilhado por todos.
- * - 5 materiais alternados: papel branco, roxo, lilás, violeta e branco em
- *   wireframe (só o contorno).
- * - 200 flutuantes: posição aleatória em x ∈ [-120, 100], z ∈ [-195, 30], altura
- *   0,5 a 18 m; os baixos (< 5 m) perto de ruas (6 m) são descartados. Escala
- *   0,3 a 2,4; rotação aleatória. Cada um guarda baseY/phase/spin para
- *   animateEnvironment fazê-lo flutuar e girar.
- * - 90 "colados" no chão: deitados (rotation.x = -90°) a 3 cm do chão, a pelo menos
- *   4,5 m das ruas, escala 0,5 a 3, só com os 4 primeiros materiais.
+ * - 4 materiais alternados: papel branco, roxo, lilás e violeta.
+ * - 90 tentativas: deitados (rotation.x = -90°) a 3 cm do chão, a pelo menos
+ *   4,5 m das ruas, escala 0,5 a 3.
  */
 function buildDecor() {
   const triGeo = new THREE.BufferGeometry().setFromPoints([
@@ -104,21 +103,7 @@ function buildDecor() {
     new THREE.MeshBasicMaterial({ color: PALETTE.purple, side: THREE.DoubleSide }),
     new THREE.MeshBasicMaterial({ color: PALETTE.lilac, side: THREE.DoubleSide }),
     new THREE.MeshBasicMaterial({ color: PALETTE.violet, side: THREE.DoubleSide }),
-    new THREE.MeshBasicMaterial({ color: PALETTE.white, wireframe: true }),
   ]
-  for (let i = 0; i < 200; i++) {
-    const x = rand(-120, 100)
-    const z = rand(-195, 30) // não invade a área do horizonte
-    const y = rand(0.5, 18)
-    if (y < 5 && nearRoad(x, z, 6)) continue
-    const mesh = new THREE.Mesh(triGeo, mats[i % mats.length])
-    mesh.position.set(x, y, z)
-    mesh.scale.setScalar(rand(0.3, 2.4))
-    mesh.rotation.set(rand(0, 6.28), rand(0, 6.28), rand(0, 6.28)) // 6.28 ≈ 2π = volta completa
-    scene.add(mesh)
-    decor.push({ mesh, baseY: y, phase: rand(0, 6.28), spin: rand(-0.4, 0.4) })
-  }
-
   // triângulos "colados" no chão, como recortes caídos
   for (let i = 0; i < 90; i++) {
     const x = rand(-110, 100)
@@ -214,18 +199,21 @@ function buildSigns() {
   }
 }
 
+/** Plano da frase do horizonte (guardado para o brilho neon pulsar em animateEnvironment). */
+let horizonText = null
+
 /**
- * Linha do horizonte, nuvem de triângulos e a frase final no fim das ruas.
+ * Linha do horizonte e a frase final (TEXTS.end) flutuando no fim das ruas.
  *
  * - Linha: plano branco de 500 × 0,25 m deitado em z = -205, sem neblina
  *   (fog: false, para não sumir no escuro).
- * - Nuvem: 26 triângulos (CircleGeometry com 3 lados) de raio 4–10 m, branco /
- *   lilás / violeta, espalhados num anel (22–34 m do centro em x, 8–13 m em y);
- *   cada um com z levemente diferente para não piscarem entre si.
- * - Frase: plano de texto de 48 m de largura (TEXTS.end) em fundo branco.
+ * - Frase: letras em NEON, sem fundo e sem enfeites em volta: plano de texto de
+ *   48 m de largura desenhado com brilho (makeTextPlane com `glow`) e somado à
+ *   cena (AdditiveBlending), o que faz a luz parecer acesa sobre o céu escuro.
+ *   Cores em HORIZON_NEON (src/data/level.js).
  * O grupo `horizon` fica em (0, 13, -225) e acompanha a bike no eixo X em
  * animateEnvironment (como algo no infinito), então a frase fica legível no
- * fim de qualquer rua.
+ * fim de qualquer rua; ela também flutua devagar para cima e para baixo.
  */
 function buildHorizon() {
   const line = new THREE.Mesh(new THREE.PlaneGeometry(500, 0.25), new THREE.MeshBasicMaterial({ color: PALETTE.white, fog: false }))
@@ -233,32 +221,57 @@ function buildHorizon() {
   line.position.set(0, 0.05, -205)
   scene.add(line)
 
-  // Nuvem de triângulos que encontra a linha do horizonte. O grupo acompanha a bike
-  // no eixo X (como algo no infinito), então a frase fica legível no fim de qualquer rua.
-  const cloudMats = [PALETTE.white, PALETTE.lilac, PALETTE.violet].map((color) => new THREE.MeshBasicMaterial({ color, fog: false }))
-  for (let i = 0; i < 26; i++) {
-    const tri = new THREE.Mesh(new THREE.CircleGeometry(rand(4, 10), 3), cloudMats[i % 3])
-    const angle = rand(0, Math.PI * 2)
-    tri.position.set(Math.cos(angle) * rand(22, 34), Math.sin(angle) * rand(8, 13), -2 - i * 0.05) // z distinto evita z-fighting
-    tri.rotation.z = rand(0, Math.PI * 2)
-    horizon.add(tri)
-  }
-  const text = makeTextPlane(TEXTS.end, { width: 48, fontSize: 46, canvasWidth: 1600, color: PALETTE.ink, bg: PALETTE.white })
-  text.material.fog = false
-  horizon.add(text)
+  horizonText = makeTextPlane(TEXTS.end, { width: 48, fontSize: 46, canvasWidth: 1600, color: HORIZON_NEON.text, glow: HORIZON_NEON.glow })
+  horizonText.material.fog = false // sem neblina: o neon brilha mesmo de longe
+  horizonText.material.blending = THREE.AdditiveBlending // luz somada = aparência de letreiro aceso
+  horizon.add(horizonText)
   horizon.position.set(0, 13, -225)
   scene.add(horizon)
 }
 
 /**
+ * Placas de FIM DE ROTA: uma no fim de cada rua (END_SIGNS em level.js), com o nome da
+ * rota e uma frase poética. Poste preto, duas lanternas lilás e a placa de papel
+ * (textura desenhada em makeEndSignTexture). Ficam no meio da rua: o poste tem colisor,
+ * então a bike "chega" ao fim e para ali.
+ */
+function buildEndSigns() {
+  const postMat = new THREE.MeshStandardMaterial({ color: PALETTE.black })
+  const glowMat = new THREE.MeshStandardMaterial({ color: PALETTE.lilac, emissive: PALETTE.lilac, emissiveIntensity: 0.9 })
+  for (const sign of END_SIGNS) {
+    const group = new THREE.Group()
+    group.position.set(sign.x, 0, sign.z)
+    for (const side of [1, -1]) {
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.16, 2.6, 0.16), postMat)
+      post.position.set(1.7 * side, 1.3, 0)
+      const lamp = new THREE.Mesh(new THREE.OctahedronGeometry(0.16, 0), glowMat)
+      lamp.position.set(1.7 * side, 2.75, 0)
+      group.add(post, lamp)
+    }
+    const plate = new THREE.Mesh(
+      new THREE.PlaneGeometry(4.4, 2.75),
+      new THREE.MeshBasicMaterial({ map: makeEndSignTexture(sign.route, sign.text), transparent: true, alphaTest: 0.3, side: THREE.DoubleSide }),
+    )
+    plate.position.y = 3.6
+    group.add(plate)
+    scene.add(group)
+    billboards.push(group)
+    world.addBody(new CANNON.Body({ type: CANNON.Body.STATIC, shape: new CANNON.Box(new CANNON.Vec3(2, 1.3, 0.25)), position: new CANNON.Vec3(sign.x, 1.3, sign.z) }))
+    endSigns.push({ ...sign, group, plate })
+  }
+}
+
+/**
  * Monta todo o cenário (chamado uma vez ao iniciar, por main.js).
  * A ordem importa só para buildProps, que consulta SIGNS para não cobrir as placas.
+ * Árvores, flores, bichos e neve ficam em forest.js, critters.js e snow.js.
  */
 export function buildEnvironment() {
   buildGround()
   buildDecor()
   buildProps()
   buildSigns()
+  buildEndSigns()
   buildHorizon()
 }
 
@@ -287,10 +300,10 @@ export function syncProps() {
 export function animateEnvironment(time, dt, bikePos) {
   horizon.position.x = THREE.MathUtils.damp(horizon.position.x, bikePos.x, 1.5, dt)
   horizon.position.y = 13 + Math.sin(time * 0.4) * 0.6
-  for (const d of decor) {
-    d.mesh.position.y = d.baseY + Math.sin(time + d.phase) * 0.3
-    d.mesh.rotation.y += d.spin * dt
-  }
+  // neon "respirando": a frase do horizonte oscila de leve no brilho (85% a 100%)
+  if (horizonText) horizonText.material.opacity = HORIZON_NEON.pulse ? 0.925 + Math.sin(time * 1.7) * 0.075 : 1
+  // placas de fim de rota: balançam de leve (como papel ao vento)
+  for (const s of endSigns) s.plate.rotation.z = Math.sin(time * 1.3 + s.x) * 0.025
   // placas balançam e o ímã pulsa quando a bike se aproxima
   for (const s of signs) {
     const near = Math.max(0, 1 - Math.hypot(bikePos.x - s.x, bikePos.z - s.z) / 9) // 1 = em cima da placa, 0 = a 9 m ou mais

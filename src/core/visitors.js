@@ -33,7 +33,9 @@ import { VISITORS } from '../data/level.js'
    ========================================================================== */
 
 const API = 'https://abacus.jasoncameron.dev' // endereço base do serviço de contagem
-const DEVICE_FLAG = 'mmj-portfolio:visitante-contado' // marca "este aparelho já foi contado"
+// Marca "este aparelho já foi contado" no localStorage. Inclui o namespace: ao zerar a contagem
+// (namespace novo em VISITORS), todos os aparelhos voltam a ser contados como visitantes únicos.
+const DEVICE_FLAG = `mmj-portfolio:visitante-contado:${VISITORS.namespace}`
 
 // Lê/grava a marca do aparelho sem quebrar se o localStorage estiver bloqueado
 // (modo privado de alguns navegadores lança erro ao acessar localStorage).

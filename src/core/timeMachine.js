@@ -9,6 +9,8 @@ import { clearFragments, findTotem, reassemble, totems } from '../world/totems.j
 import { ui } from '../ui/modal.js'
 import { hidePin } from '../ui/pins.js'
 import { toast } from '../ui/effects.js'
+import { startMatrix, stopMatrix } from '../ui/matrix.js'
+import { burstAt } from '../world/particles.js'
 
 /* ==========================================================================
    MÁQUINA DO TEMPO: gravação da trajetória, rebobinar e viagens do inventário
@@ -32,7 +34,8 @@ import { toast } from '../ui/effects.js'
    Onde mexer:
    - history.step: de quanto em quanto tempo gravar (s). Menor = caminho mais fiel, mais memória.
    - history.max: quantidade máxima de pontos gravados (os mais antigos são descartados).
-   - Em rewind(): `total / 18` = velocidade do rebobinar (metros por segundo); clamp(…, 1.5, 6) = duração mínima/máxima.
+   - Em rewind(): `total / 45` = velocidade do rebobinar (metros por segundo); clamp(…, 0.9, 2.6) = duração mínima/máxima.
+   - Visual "Matrix" do rebobinar: src/ui/matrix.js (chuva de caracteres) e body.is-rewinding no main.css.
    - doneMessage (em rewind): textos dos avisos ao terminar.
    - Pontos de chegada (início/bifurcação): CHECKPOINTS em level.js.
    ========================================================================== */
@@ -202,17 +205,21 @@ export function rewind(to = 'start', { fresh = false } = {}) {
   const dist = [0]
   for (let i = from + 1; i <= last; i++) dist.push(dist.at(-1) + Math.hypot(s[i].x - s[i - 1].x, s[i].z - s[i - 1].z))
   const total = dist.at(-1)
-  const duration = REDUCED_MOTION ? 0.8 : clamp(total / 18, 1.5, 6) // 18 m/s de rebobinar; entre 1,5 s e 6 s no total
+  // Alta velocidade: 45 m/s, entre 0,9 s e 2,6 s no total (antes era 18 m/s, até 6 s)
+  const duration = REDUCED_MOTION ? 0.8 : clamp(total / 45, 0.9, 2.6)
 
   lockBike()
-  document.body.classList.add('is-rewinding') // liga o filtro visual e o letreiro "◀◀ REBOBINANDO" (main.css)
+  // Liga o visual "Matrix": cena verde, letreiro "◀◀ REBOBINANDO" (main.css) e chuva de caracteres (matrix.js)
+  document.body.classList.add('is-rewinding')
+  startMatrix()
   if (to === 'start') resetWorld(duration, fresh)
   const cursor = { d: total } // distância "restante" ao longo da trajetória; vai de total até 0
   let seg = dist.length - 2 // índice do segmento atual (começa no último)
+  let frame = 0
   return gsap.to(cursor, {
     d: 0,
     duration,
-    ease: 'power1.inOut',
+    ease: 'power2.inOut', // acelera como uma fita rebobinando e freia perto do destino
     onUpdate: () => {
       while (seg > 0 && dist[seg] > cursor.d) seg-- // recua de segmento conforme o cursor volta
       const span = dist[seg + 1] - dist[seg] || 1
@@ -220,8 +227,11 @@ export function rewind(to = 'start', { fresh = false } = {}) {
       const a = s[from + seg]
       const b = s[from + seg + 1]
       placeBike(a.x + (b.x - a.x) * t, a.z + (b.z - a.z) * t, a.h + (b.h - a.h) * t)
+      // Rastro verde de "dados" nos passos refeitos (a cada 2 quadros, para ficar leve)
+      if (frame++ % 2 === 0) burstAt(bike.body.position.x, bike.body.position.z, 3, ['#00ff66', '#7dff9b', '#d9ffe4'], 0.35)
     },
     onComplete: () => {
+      stopMatrix()
       if (to === 'start') placeBike(cp.x, cp.z, cp.heading)
       else bike.heading = cp.heading
       s.length = from + 1 // descarta o trecho rebobinado da gravação

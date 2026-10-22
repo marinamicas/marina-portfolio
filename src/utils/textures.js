@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { PALETTE } from '../data/level.js'
+import { PALETTE, PROFILE } from '../data/level.js'
 import { rand } from './helpers.js'
 
 /* ==========================================================================
@@ -310,26 +310,43 @@ export function makePaperTexture(base, repeat = 1) {
  * @param {number} [o.canvasWidth=1024] largura do canvas em px (resolução do texto)
  * @param {string} [o.color=PALETTE.white] cor da letra
  * @param {string|null} [o.bg=null] cor do fundo (null = sem fundo, só letras)
+ * @param {string|null} [o.glow=null] cor do brilho neon em volta das letras (null = sem brilho).
+ *   Com brilho, as letras são desenhadas várias vezes com sombra desfocada (shadowBlur),
+ *   do halo mais largo e fraco ao mais justo, e por fim o miolo nítido: efeito de letreiro neon.
  * @returns {THREE.Mesh}
  */
-export function makeTextPlane(text, { width = 8, fontSize = 34, canvasWidth = 1024, color = PALETTE.white, bg = null } = {}) {
+export function makeTextPlane(text, { width = 8, fontSize = 34, canvasWidth = 1024, color = PALETTE.white, bg = null, glow = null } = {}) {
   const c = document.createElement('canvas')
   const ctx = c.getContext('2d')
   const font = `600 ${fontSize}px system-ui, "Segoe UI", sans-serif`
   ctx.font = font
   const lines = wrapText(ctx, text, canvasWidth - 100)
+  const pad = glow ? fontSize : 40 // margem em cima/embaixo; maior com neon para o brilho não ser cortado
   c.width = canvasWidth
-  c.height = lines.length * fontSize * 1.4 + 80 // redimensionar zera o contexto
+  c.height = lines.length * fontSize * 1.4 + pad * 2 // redimensionar zera o contexto
   if (bg) {
     ctx.fillStyle = bg
     jaggedPath(ctx, 10, 10, c.width - 20, c.height - 20, 6, 60)
     ctx.fill()
   }
   ctx.font = font
-  ctx.fillStyle = color
   ctx.textAlign = 'center'
   ctx.textBaseline = 'top'
-  lines.forEach((l, i) => ctx.fillText(l, c.width / 2, 40 + i * fontSize * 1.4)) // 40 px de margem superior
+  const write = () => lines.forEach((l, i) => ctx.fillText(l, c.width / 2, pad + i * fontSize * 1.4))
+  if (glow) {
+    // halos: [desfoque em px, transparência] — do mais largo/fraco ao mais justo/forte
+    ctx.shadowColor = glow
+    ctx.fillStyle = glow
+    for (const [blur, alpha] of [[fontSize * 0.9, 0.35], [fontSize * 0.45, 0.55], [fontSize * 0.18, 0.9]]) {
+      ctx.shadowBlur = blur
+      ctx.globalAlpha = alpha
+      write()
+    }
+    ctx.globalAlpha = 1
+    ctx.shadowBlur = fontSize * 0.08 // miolo quase branco com um brilho bem justo
+  }
+  ctx.fillStyle = color
+  write()
   // transparent: o fundo do canvas fica invisível; depthWrite false: não "corta" objetos atrás
   const material = new THREE.MeshBasicMaterial({ map: toTexture(c), transparent: true, depthWrite: false, side: THREE.DoubleSide })
   return new THREE.Mesh(new THREE.PlaneGeometry(width, (width * c.height) / c.width), material)
@@ -383,4 +400,194 @@ export function makeBikeTexture() {
   ctx.textBaseline = 'middle'
   ctx.fillText('?', 285, 98) // avatar não identificado
   return toTexture(c)
+}
+
+/* ==========================================================================
+   Placa de FIM DE ROTA e cartão do PRIMEIRO RECORTE (foto de perfil)
+   ========================================================================== */
+
+/**
+ * Desenha um retângulo de cantos arredondados no caminho atual do canvas.
+ * (Faz à mão para funcionar também em navegadores sem ctx.roundRect.)
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {number} x
+ * @param {number} y
+ * @param {number} w
+ * @param {number} h
+ * @param {number} r raio dos cantos em pixels
+ */
+export function roundRectPath(ctx, x, y, w, h, r) {
+  ctx.beginPath()
+  ctx.moveTo(x + r, y)
+  ctx.arcTo(x + w, y, x + w, y + h, r)
+  ctx.arcTo(x + w, y + h, x, y + h, r)
+  ctx.arcTo(x, y + h, x, y, r)
+  ctx.arcTo(x, y, x + w, y, r)
+  ctx.closePath()
+}
+
+/**
+ * Placa de fim de rota (canvas 1024 × 640): papel branco recortado, faixa roxa no topo
+ * com "FIM DA ROTA · <rota>", a frase poética no meio (quebrada em linhas) e triângulos
+ * de colagem nos cantos. Usada por buildEndSigns() em world/environment.js.
+ * @param {string} route nome da rota (ex.: 'Design')
+ * @param {string} text frase poética
+ * @returns {THREE.Texture}
+ */
+export function makeEndSignTexture(route, text) {
+  const W = 1024
+  const H = 640
+  const c = document.createElement('canvas')
+  c.width = W
+  c.height = H
+  const ctx = c.getContext('2d')
+  // papel com contorno de tesoura e sombra roxa deslocada
+  ctx.fillStyle = PALETTE.purple
+  jaggedPath(ctx, 26, 30, W - 44, H - 48, 7, 48)
+  ctx.fill()
+  ctx.fillStyle = PALETTE.white
+  jaggedPath(ctx, 14, 14, W - 44, H - 48, 7, 48)
+  ctx.fill()
+  // faixa do título
+  ctx.fillStyle = PALETTE.ink
+  ctx.fillRect(60, 56, W - 160, 92)
+  ctx.fillStyle = PALETTE.lilac
+  ctx.font = '900 46px "Arial Black", Impact, sans-serif'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(`FIM DA ROTA · ${route.toUpperCase()}`, W / 2 - 20, 104)
+  // frase poética
+  ctx.fillStyle = PALETTE.ink
+  ctx.font = 'italic 600 46px Georgia, "Times New Roman", serif'
+  const lines = wrapText(ctx, `“${text}”`, W - 220)
+  const lh = 60
+  const y0 = 330 - ((lines.length - 1) * lh) / 2
+  lines.forEach((l, i) => ctx.fillText(l, W / 2 - 20, y0 + i * lh))
+  // assinatura e triângulos de colagem
+  ctx.font = '700 28px system-ui, sans-serif'
+  ctx.fillStyle = PALETTE.purple
+  ctx.fillText('— Marina Micas Jardim', W / 2 - 20, H - 92)
+  for (const [x, y, s, col] of [[80, H - 80, 34, PALETTE.purple], [W - 110, H - 96, 26, PALETTE.lilac], [W - 90, 200, 22, PALETTE.violet]]) {
+    ctx.fillStyle = col
+    ctx.beginPath()
+    ctx.moveTo(x, y - s)
+    ctx.lineTo(x + s, y + s)
+    ctx.lineTo(x - s, y + s)
+    ctx.fill()
+  }
+  return toTexture(c)
+}
+
+/**
+ * Cartão do primeiro recorte ("Sobre"), no MESMO visual dos cartões das Experiências:
+ * cartão branco de cantos arredondados com borda lilás, título, foto, etiquetas,
+ * texto curto e o botão "Atropele para saber mais". Canvas 570 × 1200 (285 × 600 em dobro,
+ * a mesma proporção usada em cardSize(600) no level.js).
+ *
+ * A foto carrega depois: o cartão é desenhado na hora (com um espaço lilás) e redesenhado
+ * quando a imagem chega (texture.needsUpdate). Sem foto, fica o espaço lilás com as iniciais.
+ * @param {{title:string, text:string, tags:string[], photoUrl:string|null}} o
+ * @returns {THREE.CanvasTexture}
+ */
+export function makeProfileCardTexture({ title, text, tags, photoUrl }) {
+  const W = 570
+  const H = 1200
+  const c = document.createElement('canvas')
+  c.width = W
+  c.height = H
+  const ctx = c.getContext('2d')
+  const tex = toTexture(c)
+  const img = photoUrl ? new Image() : null
+
+  const draw = () => {
+    ctx.clearRect(0, 0, W, H)
+    // cartão branco com borda lilás (fora dele fica transparente: o alphaTest recorta)
+    roundRectPath(ctx, 4, 4, W - 8, H - 8, 30)
+    ctx.fillStyle = '#ffffff'
+    ctx.fill()
+    ctx.lineWidth = 4
+    ctx.strokeStyle = PALETTE.lilac
+    ctx.stroke()
+    // título
+    ctx.fillStyle = PALETTE.ink
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'top'
+    ctx.font = '800 44px system-ui, "Segoe UI", sans-serif'
+    wrapText(ctx, title, W - 64).forEach((l, i) => ctx.fillText(l, 32, 36 + i * 52))
+    // foto: ocupa a largura toda, recortada centrada nos olhos (PROFILE.eyes)
+    const py = 150
+    const ph = 520
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(4, py, W - 8, ph)
+    ctx.clip()
+    ctx.fillStyle = PALETTE.lilac
+    ctx.fillRect(4, py, W - 8, ph)
+    if (img?.complete && img.naturalWidth) {
+      const scale = Math.max((W - 8) / img.naturalWidth, ph / img.naturalHeight)
+      const dw = img.naturalWidth * scale
+      const dh = img.naturalHeight * scale
+      const dx = 4 + (W - 8) / 2 - PROFILE.eyes.x * dw
+      const dy = py + ph * 0.42 - PROFILE.eyes.y * dh
+      ctx.drawImage(img, Math.min(4, Math.max(W - 4 - dw, dx)), Math.min(py, Math.max(py + ph - dh, dy)), dw, dh)
+    } else {
+      ctx.fillStyle = PALETTE.purple
+      ctx.font = '900 150px "Arial Black", Impact, sans-serif'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText('MMJ', W / 2, py + ph / 2)
+    }
+    ctx.restore()
+    // etiquetas (pílulas lilás com texto roxo; a primeira com contorno, como o ano nos outros cartões)
+    ctx.font = '700 26px system-ui, sans-serif'
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'middle'
+    let x = 32
+    let y = py + ph + 46
+    tags.forEach((t, i) => {
+      const w = ctx.measureText(t).width + 40
+      if (x + w > W - 32) {
+        x = 32
+        y += 62
+      }
+      roundRectPath(ctx, x, y - 24, w, 48, 14)
+      if (i === 0) {
+        ctx.fillStyle = '#ffffff'
+        ctx.fill()
+        ctx.lineWidth = 3
+        ctx.strokeStyle = PALETTE.purple
+        ctx.stroke()
+      } else {
+        ctx.fillStyle = '#efe8ff'
+        ctx.fill()
+      }
+      ctx.fillStyle = PALETTE.purple
+      ctx.fillText(t, x + 20, y + 1)
+      x += w + 14
+    })
+    // texto curto
+    ctx.fillStyle = PALETTE.ink
+    ctx.font = '500 28px system-ui, sans-serif'
+    ctx.textBaseline = 'top'
+    const ty = y + 50
+    wrapText(ctx, text, W - 64).slice(0, 4).forEach((l, i) => ctx.fillText(l, 32, ty + i * 38))
+    // botão contornado no rodapé
+    roundRectPath(ctx, W - 32 - 420, H - 116, 420, 76, 38)
+    ctx.lineWidth = 3
+    ctx.strokeStyle = PALETTE.purple
+    ctx.stroke()
+    ctx.fillStyle = PALETTE.purple
+    ctx.font = '700 30px system-ui, sans-serif'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText('Atropele para saber mais', W - 32 - 210, H - 78)
+    tex.needsUpdate = true
+  }
+
+  draw()
+  if (img) {
+    img.onload = draw
+    img.src = photoUrl
+  }
+  return tex
 }

@@ -1,30 +1,40 @@
 /* ==========================================================================
    main.css — aparência de tudo que é HTML por cima do mundo 3D:
-   HUD (contatos, barra, botões, miniatura da foto), janelas flutuantes,
-   tela inicial, janelas presas no chão, visualizador, guia, foto do céu e efeitos.
+   cabeçalho (miniatura, contatos, barra, vidas), botões de ação, botões de
+   direção, janelas flutuantes, tela de carregamento, janela de instruções,
+   janelas presas no chão, visualizador, guia, foto do céu, rebobinar e efeitos.
 
-   O mundo 3D em si (chão, recortes, bike, cores do cenário) NÃO é estilizado
-   aqui: ele é desenhado pelo Three.js (src/world/*) com as cores de PALETTE em
-   src/data/level.js. Mantenha as duas paletas iguais.
+   O mundo 3D em si (chão, recortes, bike, árvores, cores do cenário) NÃO é
+   estilizado aqui: ele é desenhado pelo Three.js (src/world/*) com as cores de
+   PALETTE e FOREST em src/data/level.js.
+
+   Layout geral:
+   - .hud-header (fundo sólido) fica no topo; a altura dele é medida por
+     src/core/stage.js e gravada em --hud-h.
+   - Canvas, foto do céu, janelas presas no chão e chuva do rebobinar começam em
+     top: var(--hud-h), então NUNCA cobrem os botões de contato.
 
    Organização: cada bloco "---------- Nome ----------" cuida de uma parte da tela.
-   Unidades: px = pixels; vw/vh = % da largura/altura da janela; rem/em não são usados.
+   Unidades: px = pixels; vw/vh = % da largura/altura da janela.
 
    Onde mexer:
    - Cores → variáveis em :root (logo abaixo).
-   - Tamanho/posição dos botões → bloco "HUD: ações".
-   - Miniatura da foto e foto no céu → blocos "Foto de perfil".
-   - Celular → blocos @media (max-width: 600px) no fim de cada seção.
+   - Cabeçalho → bloco "Cabeçalho".
+   - Tamanho dos botões de direção → bloco "Botões de direção" (--pad-size).
+   - Celular → blocos @media (max-width: 600px).
    ========================================================================== */
 
-/* Variáveis de cor usadas em todo o CSS com var(--nome). Mesmos valores de PALETTE (level.js). */
+/* Variáveis usadas em todo o CSS com var(--nome). Cores = mesmos valores de PALETTE (level.js). */
 :root {
   --black: #0d0b10; /* fundo da página */
-  --ink: #1a1420; /* preto levemente roxo (rodapé do visualizador) */
+  --ink: #1a1420; /* preto levemente roxo (fundo do cabeçalho, rodapé do visualizador) */
   --purple: #6b2fd6; /* cor de destaque: botões principais, toast, sombras dos ícones */
-  --violet: #8f5cf7; /* roxo claro (reservado para variações) */
-  --lilac: #c9b6ff; /* lilás: hover dos botões, destaques, citação da bike */
+  --violet: #8f5cf7; /* roxo claro */
+  --lilac: #c9b6ff; /* lilás: hover dos botões, destaques, neon */
   --white: #f5f2ea; /* "branco de papel" das janelas e botões */
+  --danger: #ff4d6d; /* corações e perda de vida */
+  --hud-h: 0px; /* altura do cabeçalho, definida por src/core/stage.js */
+  --pad-size: 64px; /* tamanho de cada botão de direção */
 }
 
 /* ---------- Base da página ---------- */
@@ -38,29 +48,62 @@ html { overscroll-behavior: none; }
 body { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
 /* Classe genérica para esconder qualquer elemento (o !important vence qualquer outra regra) */
 .hidden { display: none !important; }
-/* touch-action: none → o navegador não rouba os gestos do canvas (arrastar bike/cenário e pinça são do jogo):
-   sem rolagem da página, sem zoom do navegador e sem "puxar para atualizar" */
-.webgl { position: fixed; inset: 0; width: 100%; height: 100%; touch-action: none; outline: none; }
+/* Canvas do jogo: começa ABAIXO do cabeçalho (top = --hud-h) e ocupa o resto da tela.
+   touch-action: none → o navegador não rouba os gestos do canvas (arrastar a bike e pinça são do jogo) */
+.webgl { position: fixed; left: 0; right: 0; top: var(--hud-h); bottom: 0; width: 100%; height: calc(100% - var(--hud-h));
+  touch-action: none; outline: none; display: block; }
 /* HUD e janelas do chão: pinça não dá zoom na página; botões sem atraso de toque duplo */
-.hud-header, .hud-progress, .hud-actions, .pins, #toast { touch-action: none; }
+.hud-header, .hud-actions, .pins, #toast, .touch-controls { touch-action: none; }
 button, a, .btn { touch-action: manipulation; }
 
-/* Dica de controles conforme o tipo de tela (dedo x mouse): só uma das duas <small> aparece */
-.only-touch { display: none !important; }
-@media (pointer: coarse) {
-  .only-touch { display: block !important; }
-  .only-desktop { display: none !important; }
-}
+/* ---------- Cabeçalho (fundo sólido) ----------
+   Uma linha no computador: [miniatura] [contatos] [barra + vidas + visitantes].
+   No celular quebra em duas linhas (ver @media no fim). */
+.hud-header { position: fixed; inset: 0 0 auto; z-index: 12; display: flex; align-items: center; gap: 14px 18px; flex-wrap: wrap;
+  padding: 10px 16px; padding-top: max(10px, env(safe-area-inset-top));
+  background: var(--ink); border-bottom: 3px solid var(--purple); box-shadow: 0 4px 0 rgba(13, 11, 16, .6); }
+
+/* Miniatura da foto: moldura de papel branca, sombra roxa deslocada e leve rotação */
+.hud-avatar { flex: none; width: 50px; height: 50px; padding: 3px; border: 0; cursor: pointer;
+  background: var(--white); box-shadow: 3px 4px 0 var(--purple); transform: rotate(-4deg); transition: transform .2s; }
+.hud-avatar:hover, .hud-avatar:focus-visible { transform: rotate(2deg) scale(1.1); outline: none; }
+/* object-fit: cover preenche o quadrado cortando as sobras; object-position (definido por JS) centraliza nos olhos */
+.hud-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; background: var(--lilac); }
+
+/* Contatos: ícones de papel levemente tortos */
+.hud-links { display: flex; gap: 10px; flex: none; }
+.hud-links a { display: block; width: 44px; height: 44px; transition: transform .2s; }
+.hud-links a:nth-child(odd) { transform: rotate(-3deg); }
+.hud-links a:nth-child(even) { transform: rotate(2deg); }
+.hud-links a:hover, .hud-links a:focus-visible { transform: rotate(-6deg) scale(1.12); }
+.hud-links img { width: 100%; height: 100%; display: block; filter: drop-shadow(2px 3px 0 var(--purple)); }
+/* O texto do link fica só para leitores de tela (escondido visualmente) */
+.hud-links span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+/* Bloco de status: barra de conhecimento e vidas lado a lado, visitantes embaixo */
+.hud-status { flex: 1 1 260px; min-width: 220px; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 14px; }
+.hud-progress { font-size: 13px; font-weight: 700; }
+.hud-progress .bar { height: 10px; margin-top: 5px; background: rgba(255, 255, 255, .15); clip-path: polygon(0 0, 100% 20%, 100% 100%, 0 80%); }
+/* Preenchimento: a largura (0 a 100%) é animada por src/ui/screens.js */
+#progress-fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--purple), var(--lilac)); }
+/* Corações: .full = vida disponível; .empty = vida perdida */
+.hud-lives { display: flex; gap: 3px; font-size: 20px; line-height: 1; }
+.hud-lives .heart { display: inline-block; color: var(--danger); text-shadow: 0 0 6px rgba(255, 77, 109, .6); }
+.hud-lives .heart.empty { color: rgba(255, 255, 255, .22); text-shadow: none; }
+.hud-status .visitors { grid-column: 1 / -1; margin: 0; }
+
+/* Contatos dentro das janelas (clonados do cabeçalho por src/ui/screens.js): ícone + nome em um "recorte" preto */
+.contact-list { display: flex; flex-wrap: wrap; gap: 10px; }
+.contact-list a { display: flex; align-items: center; gap: 8px; padding: 6px 14px 6px 6px; background: var(--black); color: var(--white);
+  font-weight: 800; text-decoration: none; clip-path: polygon(3% 0, 100% 6%, 97% 100%, 0 92%); }
+.contact-list a:hover { background: var(--purple); }
+.contact-list img { width: 36px; height: 36px; }
 
 /* ---------- Foto de perfil: camada do "céu" ----------
-   Camada fixa que cobre a janela, por cima do canvas (z-index 2) e abaixo das janelas
-   presas no chão (5) e do HUD (10). pointer-events: none deixa os gestos passarem para o jogo.
-   As variáveis --sky-* são definidas por src/ui/profile.js a partir de PROFILE.sky (level.js):
-   - --sky-opacity: transparência geral (0.22 = bem sutil)
-   - --sky-blend:   'screen' só clareia áreas escuras → parece fundo; 'normal' sobrepõe de verdade
-   - --sky-fade-from / --sky-fade-to: faixa vertical onde a foto some (máscara em degradê),
-     deixando a parte de baixo da tela (o chão perto da bike) limpa. */
-.sky-photo { position: fixed; inset: 0; z-index: 2; overflow: hidden; pointer-events: none;
+   Cobre só a área do jogo (abaixo do cabeçalho), por cima do canvas (z-index 2) e abaixo das janelas
+   presas no chão (5). pointer-events: none deixa os gestos passarem para o jogo.
+   As variáveis --sky-* são definidas por src/ui/profile.js a partir de PROFILE.sky (level.js). */
+.sky-photo { position: fixed; left: 0; right: 0; top: var(--hud-h); bottom: 0; z-index: 2; overflow: hidden; pointer-events: none;
   opacity: var(--sky-opacity, .22); mix-blend-mode: var(--sky-blend, screen);
   -webkit-mask-image: linear-gradient(to bottom, #000 var(--sky-fade-from, 45%), transparent var(--sky-fade-to, 85%));
   mask-image: linear-gradient(to bottom, #000 var(--sky-fade-from, 45%), transparent var(--sky-fade-to, 85%)); }
@@ -76,16 +119,7 @@ button, a, .btn { touch-action: manipulation; }
 .eyes-marker::before { left: -14px; right: -14px; top: 50%; height: 2px; translate: 0 -50%; }
 .eyes-marker::after { top: -14px; bottom: -14px; left: 50%; width: 2px; translate: -50% 0; }
 
-/* ---------- Foto de perfil: miniatura (thumbnail) no HUD ----------
-   Botão quadrado no canto superior esquerdo, com moldura de papel branca, sombra roxa
-   deslocada e uma leve rotação (mesma linguagem dos ícones de contato). */
-.hud-avatar { position: fixed; top: 12px; left: 12px; z-index: 11; width: 52px; height: 52px; padding: 3px; border: 0; cursor: pointer;
-  background: var(--white); box-shadow: 3px 4px 0 var(--purple); transform: rotate(-4deg); transition: transform .2s; }
-.hud-avatar:hover, .hud-avatar:focus-visible { transform: rotate(2deg) scale(1.12); outline: none; }
-/* object-fit: cover preenche o quadrado cortando as sobras; object-position (definido por JS) centraliza nos olhos */
-.hud-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; background: var(--lilac); }
-
-/* ---------- Foto de perfil: janela "Sobre a Marina" ---------- */
+/* ---------- Janela "Sobre a Marina" ---------- */
 /* Duas colunas: foto à esquerda (150 px) e textos à direita */
 .profile-card { display: grid; grid-template-columns: 150px 1fr; gap: 22px; align-items: start; }
 /* Moldura de papel inclinada com sombra roxa */
@@ -98,62 +132,67 @@ button, a, .btn { touch-action: manipulation; }
 /* Aviso discreto quando a foto real ainda não foi colocada */
 .profile-hint { display: block; margin-bottom: 12px; font-size: 12px; opacity: .7; }
 
-/* ---------- HUD: header (ícones de contato no topo, centralizados) ----------
-   pointer-events: none no header deixa cliques "passarem" para o jogo fora dos ícones;
-   os próprios links voltam a receber cliques com pointer-events: auto. */
-.hud-header { position: fixed; inset: 0 0 auto; display: flex; justify-content: center; padding: 12px; z-index: 10; pointer-events: none; }
-.hud-links { display: flex; gap: 10px; pointer-events: auto; }
-.hud-links a { display: block; width: 48px; height: 48px; transition: transform .2s; }
-/* Ícones levemente tortos, alternando o lado, como recortes colados à mão */
-.hud-links a:nth-child(odd) { transform: rotate(-3deg); }
-.hud-links a:nth-child(even) { transform: rotate(2deg); }
-.hud-links a:hover, .hud-links a:focus-visible { transform: rotate(-6deg) scale(1.12); }
-/* Sombra roxa deslocada: efeito de papel recortado */
-.hud-links img { width: 100%; height: 100%; display: block; filter: drop-shadow(2px 3px 0 var(--purple)); }
-/* O texto do link fica só para leitores de tela (escondido visualmente) */
-.hud-links span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-
-/* Contatos dentro das janelas (clonados do header por src/ui/screens.js): ícone + nome em um "recorte" preto */
-.contact-list { display: flex; flex-wrap: wrap; gap: 10px; }
-.contact-list a { display: flex; align-items: center; gap: 8px; padding: 6px 14px 6px 6px; background: var(--black); color: var(--white);
-  font-weight: 800; text-decoration: none; clip-path: polygon(3% 0, 100% 6%, 97% 100%, 0 92%); }
-.contact-list a:hover { background: var(--purple); }
-.contact-list img { width: 36px; height: 36px; }
-
-/* ---------- HUD: progresso ("Conhecimento sobre Marina: X%") ---------- */
-.hud-progress { position: fixed; top: 74px; left: 50%; translate: -50% 0; width: min(420px, 80vw); z-index: 10; font-size: 13px; font-weight: 700; text-align: center; text-shadow: 0 1px 2px var(--black); pointer-events: none; }
-/* Trilho da barra, com recorte inclinado */
-.hud-progress .bar { height: 10px; margin-top: 6px; background: rgba(255, 255, 255, .15); clip-path: polygon(0 0, 100% 20%, 100% 100%, 0 80%); }
-/* Preenchimento: a largura (0 a 100%) é animada por src/ui/screens.js */
-#progress-fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--purple), var(--lilac)); }
-
-/* ---------- HUD: ações (botões do canto inferior esquerdo) ---------- */
-.hud-actions { position: fixed; bottom: 16px; left: 16px; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; z-index: 10; }
+/* ---------- Botões de ação (logo abaixo do cabeçalho, à esquerda) ---------- */
+.hud-actions { position: fixed; top: calc(var(--hud-h) + 10px); left: 12px; right: 12px; z-index: 10; display: flex; flex-wrap: wrap;
+  align-items: flex-start; gap: 8px; pointer-events: none; }
+.hud-actions > * { pointer-events: auto; }
 /* Estilo base de TODOS os botões do site (.btn também é usado em links): papel branco com recorte inclinado */
-.hud-actions button, .btn {
-  border: 0; padding: 12px 16px; cursor: pointer; font: inherit; font-weight: 800; text-decoration: none; display: inline-block;
+.hud-actions > button, .rewind > button, .btn {
+  border: 0; padding: 10px 14px; cursor: pointer; font: inherit; font-weight: 800; text-decoration: none; display: inline-block;
   background: var(--white); color: var(--black); clip-path: polygon(3% 0, 100% 6%, 97% 100%, 0 92%);
 }
-.hud-actions button:hover, .btn:hover, .hud-actions button:focus-visible, .btn:focus-visible { background: var(--lilac); }
+.hud-actions > button:hover, .rewind > button:hover, .btn:hover,
+.hud-actions > button:focus-visible, .rewind > button:focus-visible, .btn:focus-visible { background: var(--lilac); }
+/* Botão "Botões" desligado (controles ocultos): aparência apagada */
+#btn-controls[aria-pressed="false"] { background: rgba(245, 242, 234, .55); }
 /* Variante "fantasma": fundo preto (botão secundário) */
 .btn.ghost { background: var(--black); color: var(--white); }
 .btn.ghost:hover { background: var(--purple); }
-/* Botão desabilitado (ex.: "Recortando papéis…" enquanto as imagens carregam) */
+/* Botão desabilitado */
 .btn:disabled { opacity: .5; cursor: wait; }
 /* Contador "X/Y" dentro do botão Inventário */
-#inventory-count { margin-left: 4px; padding: 2px 6px; background: var(--purple); color: var(--white); font-size: 12px; }
+#inventory-count { display: inline-block; margin-left: 4px; padding: 2px 6px; background: var(--purple); color: var(--white); font-size: 12px; }
 
-/* Menu do botão Rebobinar: escondido; aparece acima do botão quando .rewind recebe a classe .open */
+/* Menu do Rebobinar: abre PARA BAIXO (o botão fica no topo da área do jogo) */
 .rewind { position: relative; }
-.rewind-menu { position: absolute; bottom: calc(100% + 6px); left: 0; display: none; flex-direction: column; gap: 6px; min-width: 210px; }
+.rewind-menu { position: absolute; top: calc(100% + 6px); left: 0; display: none; flex-direction: column; gap: 6px; min-width: 220px; z-index: 2; }
 .rewind.open .rewind-menu { display: flex; }
-.rewind-menu button { text-align: left; background: var(--purple); color: var(--white); }
+.rewind-menu button { border: 0; padding: 11px 14px; cursor: pointer; font: inherit; font-weight: 800; text-align: left; background: var(--purple); color: var(--white);
+  clip-path: polygon(3% 0, 100% 6%, 97% 100%, 0 92%); }
+.rewind-menu button:hover, .rewind-menu button:focus-visible { background: var(--black); }
+.rewind-menu .danger { background: #3a1222; color: #ffd1dc; }
 
-/* ---------- Toast (aviso rápido roxo embaixo da tela) ----------
-   Começa invisível; src/ui/effects.js anima opacidade e posição com GSAP. */
-#toast { position: fixed; bottom: 80px; left: 50%; translate: -50% 0; max-width: 90vw; padding: 10px 18px; background: var(--purple); color: var(--white);
-  font-weight: 700; text-align: center; z-index: 15; opacity: 0; visibility: hidden; pointer-events: none;
+/* Botão de som: ícone + "Som" + créditos do autor da música (duas linhas) */
+.hud-actions .sound { display: inline-flex; align-items: center; gap: 8px; text-align: left; }
+.sound-icon { font-size: 18px; }
+.sound-text { display: flex; flex-direction: column; line-height: 1.1; }
+.sound-text small { font-size: 11px; font-weight: 600; opacity: .8; }
+
+/* ---------- Botões de direção (src/ui/controls.js) ----------
+   Fixos nas bordas inferiores: ◀ ▶ à esquerda; ⚡ ▲ ▼ à direita. Ficam por cima do canvas.
+   body.controls-off (botão 🎮 desligado) esconde tudo e libera arrastar a bike. */
+.touch-controls { position: fixed; left: 0; right: 0; bottom: 0; z-index: 9; pointer-events: none;
+  display: flex; justify-content: space-between; align-items: flex-end;
+  padding: 14px; padding-bottom: max(14px, env(safe-area-inset-bottom)); }
+body.controls-off .touch-controls { display: none; }
+.pad { display: flex; gap: 10px; align-items: flex-end; pointer-events: auto; }
+.pad-col { display: flex; flex-direction: column; gap: 10px; }
+.pad button { width: var(--pad-size); height: var(--pad-size); border: 2px solid rgba(201, 182, 255, .7); border-radius: 18px; cursor: pointer;
+  font-size: 26px; line-height: 1; color: var(--white); background: rgba(26, 20, 32, .72);
+  box-shadow: 0 0 0 2px rgba(13, 11, 16, .5), 0 0 14px rgba(143, 92, 247, .35);
+  touch-action: none; -webkit-user-select: none; user-select: none; }
+.pad button.small { width: calc(var(--pad-size) * .78); height: calc(var(--pad-size) * .78); font-size: 22px; }
+/* .is-down = botão pressionado agora (mantido enquanto o dedo/mouse/tecla segura) */
+.pad button.is-down { background: var(--purple); border-color: var(--lilac); box-shadow: 0 0 18px rgba(201, 182, 255, .8); transform: scale(.94); }
+
+/* ---------- Toast (aviso rápido roxo) ----------
+   Fica no alto da área do jogo, logo abaixo dos botões de ação: assim nunca cobre a bike
+   (que fica no meio/baixo da tela) nem os botões de direção. Começa invisível; src/ui/effects.js anima. */
+#toast { position: fixed; top: calc(var(--hud-h) + 66px); left: 50%; translate: -50% 0; max-width: min(560px, 86vw); padding: 10px 18px;
+  background: var(--purple); color: var(--white); font-weight: 700; text-align: center; z-index: 15; opacity: 0; visibility: hidden; pointer-events: none;
   clip-path: polygon(2% 0, 100% 8%, 98% 100%, 0 90%); }
+/* Variante de dano (perdeu vida) */
+#toast.hurt { background: #b3123a; }
 
 /* ---------- Janelas flutuantes (modal) ---------- */
 /* Fundo escurecido que cobre a tela; o cartão fica centralizado */
@@ -161,12 +200,12 @@ button, a, .btn { touch-action: manipulation; }
 /* Dentro da janela o texto pode ser selecionado e rolado com o dedo */
 .modal-card { user-select: text; -webkit-user-select: text; touch-action: pan-y; overscroll-behavior: contain; }
 /* Cartão de papel: largura máxima 560 px (92% da tela no celular), rola por dentro se o conteúdo for grande */
-.modal-card { position: relative; width: min(560px, 92vw); max-height: 82vh; overflow: auto; padding: 40px 32px 32px;
+.modal-card { position: relative; width: min(560px, 92vw); max-height: 86vh; overflow: auto; padding: 40px 32px 32px;
   background: var(--white); color: var(--black); clip-path: polygon(2% 3%, 98% 0, 100% 96%, 0 100%); }
 .modal-card h2 { font-size: 28px; margin-bottom: 12px; text-transform: uppercase; line-height: 1.1; }
 .modal-card p { line-height: 1.55; margin-bottom: 16px; }
 /* "Etiqueta" roxa pequena acima do título (ex.: categoria do recorte) */
-.modal-card .tag, .start-card .tag { color: var(--purple); font-weight: 800; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 4px; }
+.modal-card .tag { color: var(--purple); font-weight: 800; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 4px; }
 .modal-close { position: absolute; top: 8px; right: 14px; border: 0; background: none; font-size: 30px; cursor: pointer; color: var(--black); }
 /* Linha de botões das janelas */
 .actions { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -174,7 +213,7 @@ button, a, .btn { touch-action: manipulation; }
 /* Dentro das janelas, o botão principal é roxo (e fica preto ao passar o mouse) */
 .modal-card .actions .btn:not(.ghost) { background: var(--purple); color: var(--white); }
 .modal-card .actions .btn:not(.ghost):hover, .modal-card .actions .btn:not(.ghost):focus-visible { background: var(--black); }
-/* Janela Game Over: título maior e roxo */
+/* Janela Game Over / Fim das vidas: título maior e roxo */
 .game-over h2 { font-size: 40px; color: var(--purple); letter-spacing: .04em; }
 /* Lista do inventário: um botão por recorte; .got = conquistado (clicável), .locked = ainda não */
 .inventory { list-style: none; padding: 0; display: grid; gap: 8px; margin-bottom: 16px; }
@@ -183,29 +222,31 @@ button, a, .btn { touch-action: manipulation; }
 .inventory .got button:hover { background: var(--purple); }
 .inventory .locked button { opacity: .45; cursor: not-allowed; }
 .inventory small { display: block; opacity: .75; margin-top: 4px; }
-/* Janela "Sobre": no celular, a foto fica em cima dos textos */
-@media (max-width: 600px) {
-  .profile-card { grid-template-columns: 1fr; }
-  .profile-photo { width: 140px; }
-}
 
-/* ---------- Tela inicial ---------- */
-/* Cobre tudo (z-index 40) com um brilho roxo no canto e fundo quase preto */
-#start-screen { position: fixed; inset: 0; display: grid; place-items: center; z-index: 40;
-  background: radial-gradient(circle at 30% 20%, rgba(107, 47, 214, .35), transparent 60%), rgba(13, 11, 16, .82); }
-.start-card { width: min(520px, 90vw); padding: 40px 36px; background: var(--white); color: var(--black); text-align: left;
-  clip-path: polygon(3% 2%, 100% 0, 97% 100%, 0 96%); }
-/* Título grande: clamp = mínimo 34 px, cresce com a largura (7vw), máximo 54 px */
-.start-card h1 { font-family: 'Arial Black', Impact, sans-serif; font-size: clamp(34px, 7vw, 54px); line-height: .95; margin: 6px 0 16px; text-transform: uppercase; }
-.start-card p { line-height: 1.5; margin-bottom: 20px; }
-.start-card .btn { background: var(--purple); color: var(--white); font-size: 18px; padding: 14px 26px; }
-.start-card .btn:hover { background: var(--black); }
-.start-card small { display: block; margin-top: 16px; opacity: .7; }
+/* ---------- Janela inicial de instruções (src/ui/onboarding.js) ---------- */
+/* Botão do currículo: o destaque principal da janela, para quem quer ver as experiências sem jogar */
+.cv-cta { display: flex !important; align-items: center; justify-content: center; gap: 10px; width: 100%; margin: 4px 0 16px;
+  padding: 16px 20px !important; font-size: 19px !important; text-align: center;
+  background: linear-gradient(90deg, var(--purple), var(--violet)) !important; color: var(--white) !important;
+  box-shadow: 0 0 0 3px var(--lilac) inset; }
+.cv-cta:hover, .cv-cta:focus-visible { background: var(--black) !important; }
+.cv-cta small { display: block; font-size: 12px; font-weight: 600; opacity: .85; }
+.onboarding .start-btn { width: 100%; text-align: center; font-size: 18px; padding: 14px 20px; }
+.onboarding .lives-note { padding: 8px 12px; background: #ffe3ea; font-weight: 700; font-size: 14px; }
+.onboarding .controls-note { font-size: 13px; opacity: .8; }
+
+/* ---------- Tela de carregamento ---------- */
+#start-screen { position: fixed; inset: 0; display: grid; place-items: center; z-index: 40; background: rgba(13, 11, 16, .92); }
+#start-screen .loading { display: flex; align-items: center; gap: 12px; font-weight: 800; letter-spacing: .06em; color: var(--lilac); }
+/* Triângulo neon girando enquanto carrega */
+.loading-tri { width: 28px; height: 28px; background: var(--lilac); clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  filter: drop-shadow(0 0 8px var(--violet)); animation: spin 1.2s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ---------- Janelas presas no chão (recortes conquistados) ----------
-   Camada .pins cobre a tela; cada .pin é um ponto (0×0) movido por JS (translate) para a
-   posição do recorte projetada no 3D. O cartão (.pin-card) "cresce" para cima a partir desse ponto. */
-.pins { position: fixed; inset: 0; z-index: 5; pointer-events: none; overflow: hidden; }
+   Camada .pins cobre a área do jogo (abaixo do cabeçalho); cada .pin é um ponto (0×0) movido por JS
+   (translate) para a posição do recorte projetada no 3D. O cartão (.pin-card) "cresce" para cima. */
+.pins { position: fixed; left: 0; right: 0; top: var(--hud-h); bottom: 0; z-index: 5; pointer-events: none; overflow: hidden; }
 .pin { position: absolute; left: 0; top: 0; width: 0; height: 0; }
 /* transform-origin na base: ao escalar com a distância, o cartão fica "plantado" no chão */
 .pin-card { position: absolute; left: 0; bottom: 0; translate: -50% 0; transform-origin: 50% 100%; width: 250px; padding: 14px 16px 16px;
@@ -219,9 +260,8 @@ button, a, .btn { touch-action: manipulation; }
 .pin-card .actions { gap: 6px; }
 .pin-card .btn { padding: 8px 12px; font-size: 13px; background: var(--purple); color: var(--white); }
 .pin-card .btn:hover, .pin-card .btn:focus-visible { background: var(--black); }
-#inventory-count { display: inline-block; }
 
-/* ---------- Modal guia de navegação (src/ui/guide.js) ---------- */
+/* ---------- Modal guia de navegação e instruções (src/ui/guide.js) ---------- */
 .guide { list-style: none; padding: 0; display: grid; gap: 12px; margin-bottom: 20px; }
 .guide li { display: flex; gap: 12px; align-items: flex-start; }
 /* Quadradinho preto com o emoji do gesto */
@@ -234,22 +274,8 @@ button, a, .btn { touch-action: manipulation; }
 /* Botões do guia sempre visíveis no rodapé da janela, mesmo se a lista precisar rolar */
 .guide-card .actions { position: sticky; bottom: -32px; margin: 0 -32px -32px; padding: 14px 32px 24px; background: var(--white); }
 
-/* Celular: guia compacto para caber na tela sem rolar */
-@media (max-width: 600px) {
-  .guide-card { padding: 32px 20px 20px; }
-  .guide-card h2 { font-size: 21px; margin-bottom: 8px; }
-  .guide-card .guide-reason { font-size: 14px; padding: 6px 10px; margin-bottom: 12px; }
-  .guide { gap: 8px; margin-bottom: 8px; }
-  .guide-icon { flex-basis: 32px; height: 32px; font-size: 17px; }
-  .guide strong { font-size: 14px; }
-  .guide p { font-size: 13px; line-height: 1.3; }
-  .guide-card .actions { bottom: -20px; margin: 0 -20px -20px; padding: 10px 20px 16px; }
-  .guide-card .actions .btn { flex: 1 1 100%; text-align: center; padding: 10px 12px; }
-}
-
 /* ---------- Contador de visitantes ---------- */
-.visitors { display: block; margin-top: 6px; font-size: 11px; font-weight: 600; opacity: .8; }
-.start-card .visitors { margin-top: 10px; color: var(--purple); opacity: 1; }
+.visitors { display: block; margin-top: 6px; font-size: 11px; font-weight: 600; opacity: .75; }
 
 /* ---------- Visualizador em tela cheia (links externos e "Saiba mais", src/ui/viewer.js) ---------- */
 /* Cobre tudo (z-index 80), em coluna: barra roxa em cima + corpo (iframe ou cartão) embaixo */
@@ -271,7 +297,7 @@ button, a, .btn { touch-action: manipulation; }
 .viewer-loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--black); font-weight: 800; pointer-events: none; }
 .viewer-hint { margin: 0; padding: 6px 12px; padding-bottom: max(6px, env(safe-area-inset-bottom)); font-size: 12px; background: var(--ink); color: var(--white); }
 .viewer-link { border: 0; background: none; color: var(--lilac); font: inherit; font-weight: 800; text-decoration: underline; cursor: pointer; }
-/* Cartão usado para e-mail, telefone e sites que proíbem iframe */
+/* Cartão usado para e-mail, telefone, PDF no celular e sites que proíbem iframe */
 .viewer-card { margin: auto; padding: 32px 24px; max-width: 480px; color: var(--black); text-align: center; }
 .viewer-card .actions { justify-content: center; }
 .viewer-card .actions .btn:not(.ghost) { background: var(--purple); color: var(--white); }
@@ -279,10 +305,6 @@ button, a, .btn { touch-action: manipulation; }
 .viewer-card h2 { text-transform: uppercase; margin-bottom: 8px; }
 .viewer-card p { line-height: 1.5; margin-bottom: 12px; }
 .viewer-url { padding: 8px 10px; background: var(--lilac); font-weight: 700; word-break: break-all; }
-@media (max-width: 600px) {
-  .viewer-bar [data-viewer="copy"] { display: none; } /* no celular, "copiar" fica no rodapé/cartão */
-  .viewer-btn { padding: 9px 12px; font-size: 14px; }
-}
 
 /* ---------- Aviso de WebGL indisponível (mostrado por src/core/stage.js) ---------- */
 #no-webgl { position: fixed; inset: 0; display: grid; place-items: center; padding: 24px; z-index: 50; background: var(--black); text-align: center; line-height: 1.5; }
@@ -291,23 +313,62 @@ button, a, .btn { touch-action: manipulation; }
 /* Papeizinhos triangulares que voam pela tela no atropelo (criados por src/ui/effects.js) */
 .paper-bit { position: fixed; left: 0; top: 0; width: 18px; height: 18px; pointer-events: none; z-index: 30;
   clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+/* Clarão vermelho nas bordas ao perder vida (src/ui/effects.js → hurtFlash) */
+.hurt-flash { position: fixed; left: 0; right: 0; top: var(--hud-h); bottom: 0; z-index: 8; pointer-events: none; opacity: 0;
+  box-shadow: inset 0 0 120px 30px rgba(255, 30, 70, .75); }
 
-/* Rebobinando: o canvas fica dessaturado/esverdeado como fita VHS e o texto "◀◀ REBOBINANDO" pisca */
-body.is-rewinding .webgl { filter: saturate(.4) contrast(1.2) hue-rotate(-25deg); }
-body.is-rewinding::after { content: '◀◀ REBOBINANDO'; position: fixed; top: 110px; left: 50%; translate: -50% 0; z-index: 15;
-  font: 800 22px monospace; letter-spacing: .2em; animation: blink .6s steps(2) infinite; pointer-events: none; }
+/* ---------- Rebobinar estilo "Matrix" (src/ui/matrix.js + timeMachine.js) ----------
+   Enquanto rebobina: o canvas fica verde e escuro, a chuva de caracteres cai por cima
+   e o letreiro "◀◀ REBOBINANDO" pisca em verde neon. */
+body.is-rewinding .webgl { filter: grayscale(1) sepia(1) hue-rotate(70deg) saturate(3.2) brightness(.75) contrast(1.25); }
+.matrix-rain { position: fixed; left: 0; right: 0; top: var(--hud-h); bottom: 0; width: 100%; height: calc(100% - var(--hud-h));
+  z-index: 7; pointer-events: none; opacity: 0; transition: opacity .25s; mix-blend-mode: screen; }
+body.is-rewinding .matrix-rain { opacity: .85; }
+body.is-rewinding::after { content: '◀◀ REBOBINANDO'; position: fixed; top: calc(var(--hud-h) + 125px); left: 50%; translate: -50% 0; z-index: 15;
+  font: 800 22px ui-monospace, Consolas, monospace; letter-spacing: .2em; color: #7dff9b; text-shadow: 0 0 8px #00ff66, 0 0 18px #00c853;
+  animation: blink .5s steps(2) infinite; pointer-events: none; }
 @keyframes blink { 50% { opacity: 0; } }
 
 /* ---------- Celular (telas até 600 px de largura) ---------- */
 @media (max-width: 600px) {
-  .hud-avatar { width: 42px; height: 42px; top: 8px; left: 8px; }
-  .hud-links a { width: 40px; height: 40px; }
-  .hud-progress { top: 62px; }
-  .hud-actions { left: 8px; right: 8px; bottom: 8px; }
-  .hud-actions button { padding: 10px 12px; font-size: 13px; }
+  :root { --pad-size: 58px; }
+  /* Cabeçalho em duas linhas: [miniatura + contatos] / [barra + vidas + visitantes] */
+  .hud-header { gap: 8px 10px; padding: 8px 10px; padding-top: max(8px, env(safe-area-inset-top)); }
+  .hud-avatar { width: 40px; height: 40px; }
+  .hud-links { gap: 7px; }
+  .hud-links a { width: 36px; height: 36px; }
+  .hud-status { flex-basis: 100%; min-width: 0; }
+  .hud-lives { font-size: 17px; }
+  /* Botões de ação só com ícone (o texto vira dica para leitores de tela) */
+  .hud-actions { left: 8px; right: 8px; gap: 6px; }
+  .hud-actions > button, .rewind > button { padding: 8px 11px; font-size: 14px; }
+  .hud-actions .label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .sound-text strong { display: none; }
+  .sound-text small { max-width: 120px; white-space: normal; }
+  /* No celular os botões de ação ocupam duas linhas (o de som quebra): o aviso fica abaixo delas */
+  #toast { top: calc(var(--hud-h) + 122px); font-size: 14px; }
+  body.is-rewinding::after { top: calc(var(--hud-h) + 180px); font-size: 18px; }
+  .touch-controls { padding: 10px; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+  .pad { gap: 8px; }
+  .profile-card { grid-template-columns: 1fr; }
+  .profile-photo { width: 140px; }
+  .viewer-bar [data-viewer="copy"] { display: none; } /* no celular, "copiar" fica no rodapé/cartão */
+  .viewer-btn { padding: 9px 12px; font-size: 14px; }
+  /* Guia compacto para caber na tela sem rolar */
+  .guide-card { padding: 32px 20px 20px; }
+  .guide-card h2 { font-size: 21px; margin-bottom: 8px; }
+  .guide-card .guide-reason { font-size: 14px; padding: 6px 10px; margin-bottom: 12px; }
+  .guide { gap: 8px; margin-bottom: 8px; }
+  .guide-icon { flex-basis: 32px; height: 32px; font-size: 17px; }
+  .guide strong { font-size: 14px; }
+  .guide p { font-size: 13px; line-height: 1.3; }
+  .guide-card .actions { bottom: -20px; margin: 0 -20px -20px; padding: 10px 20px 16px; }
+  .guide-card .actions .btn { flex: 1 1 100%; text-align: center; padding: 10px 12px; }
+  .cv-cta { font-size: 17px !important; }
 }
 
-/* Acessibilidade: quem pediu menos animações no sistema não vê o texto piscando */
+/* Acessibilidade: quem pediu menos animações no sistema não vê o texto piscando nem o triângulo girando */
 @media (prefers-reduced-motion: reduce) {
   body.is-rewinding::after { animation: none; }
+  .loading-tri { animation: none; }
 }

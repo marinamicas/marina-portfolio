@@ -1,6 +1,8 @@
 import { PALETTE, PROFILE, TEXTS } from '../data/level.js'
 import { clamp, escapeHTML } from '../utils/helpers.js'
 import { jaggedPath } from '../utils/textures.js'
+import { PHOTO_URL } from '../utils/profileImage.js'
+import { viewport } from '../core/stage.js'
 import { ui } from './modal.js'
 import { contactsHTML } from './screens.js'
 
@@ -39,15 +41,7 @@ import { contactsHTML } from './screens.js'
    - Texto da janela "Sobre" → showProfile() abaixo e TEXTS em level.js.
    ========================================================================== */
 
-/**
- * Todas as imagens da pasta src/assets/images/, descobertas pelo Vite na hora do build.
- * Chave: caminho relativo (ex.: '../assets/images/profile.jpg'); valor: URL final do arquivo.
- * Com `eager: true` as URLs já vêm resolvidas (sem carregamento preguiçoso).
- */
-const IMAGES = import.meta.glob('../assets/images/*.{png,webp,avif,jpg,jpeg}', { eager: true, import: 'default' })
-
-/** URL da foto de perfil real, ou null se o arquivo ainda não foi colocado na pasta. */
-const PHOTO_URL = IMAGES[`../assets/images/${PROFILE.image}`] ?? null
+// URL da foto real (ou null): descoberta em src/utils/profileImage.js, compartilhada com o recorte da apresentação
 
 /** true quando a foto real existe (usado pela janela "Sobre" para avisar que é um retrato provisório). */
 export const hasProfilePhoto = Boolean(PHOTO_URL)
@@ -155,8 +149,9 @@ const skyImg = skyLayer?.querySelector('img')
  */
 function layoutSky() {
   if (!skyImg || !skyImg.naturalWidth) return
-  const vw = innerWidth
-  const vh = innerHeight
+  // Área do jogo (abaixo do cabeçalho): a camada do céu cobre só ela
+  const vw = skyLayer.clientWidth || viewport.width
+  const vh = skyLayer.clientHeight || viewport.height
   const iw = skyImg.naturalWidth
   const ih = skyImg.naturalHeight
   // limites evitam divisão por zero se alguém colocar olhos em 0 ou 1
@@ -189,19 +184,26 @@ function setupEyesMarker() {
   if (!new URLSearchParams(location.search).has('olhos')) return
   const marker = document.createElement('div')
   marker.className = 'eyes-marker'
-  marker.style.left = `${PROFILE.anchor.x * 100}%`
-  marker.style.top = `${PROFILE.anchor.y * 100}%`
   marker.title = 'Ponto dos olhos (PROFILE.anchor). Ajuste PROFILE.eyes em src/data/level.js.'
   document.body.appendChild(marker)
+  // A âncora é relativa à área do jogo (abaixo do cabeçalho): reposiciona a cada mudança de tamanho
+  const place = () => {
+    marker.style.left = `${viewport.left + PROFILE.anchor.x * viewport.width}px`
+    marker.style.top = `${viewport.top + PROFILE.anchor.y * viewport.height}px`
+  }
+  place()
+  addEventListener('viewport-change', place)
 }
 
 /* ---------------- Janela "Sobre a Marina" ---------------- */
 
 /**
  * Abre a janela com a foto grande, a apresentação, o easter egg da bicicleta e os contatos.
- * Chamada pelo clique no thumbnail (.hud-avatar).
+ * Chamada pelo clique no thumbnail (.hud-avatar) e ao atropelar o primeiro recorte (main.js).
+ * @param {{onClose?: Function}} [o] onClose = o que fazer quando a janela fechar
+ *   (no atropelo: verificar se o jogo foi zerado)
  */
-export function showProfile() {
+export function showProfile({ onClose = null } = {}) {
   const note = hasProfilePhoto ? '' : '<small class="profile-hint">Retrato provisório: coloque sua foto em src/assets/images/.</small>'
   ui.open(
     `<div class="profile-card">
@@ -217,7 +219,7 @@ export function showProfile() {
          ${contactsHTML()}
        </div>
      </div>`,
-    { className: 'profile-modal' },
+    { className: 'profile-modal', onClose },
   )
 }
 
@@ -250,7 +252,8 @@ export function initProfile() {
     skyImg.addEventListener('load', layoutSky, { once: true })
     skyImg.src = profileImageURL
     if (skyImg.complete && skyImg.naturalWidth) layoutSky() // imagem já em cache: o 'load' pode não disparar
-    addEventListener('resize', layoutSky, { passive: true })
+    // stage.js avisa quando a área do jogo muda (janela redimensionada ou cabeçalho mudou de altura)
+    addEventListener('viewport-change', layoutSky)
     skyLayer.classList.remove('hidden')
   }
   setupEyesMarker()

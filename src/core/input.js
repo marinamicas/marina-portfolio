@@ -5,8 +5,9 @@ import { registerGesture } from './invalidGestures.js'
    ENTRADA: TECLADO, RODA DO MOUSE / TRACKPAD E GESTOS DO SAFARI
 
    Papel deste arquivo:
-   - Ler o teclado (W A S D / setas / Shift) para o objeto `input`, que a bike
-     consome a cada frame.
+   - Ler o teclado (W A S D / setas / Shift) e os botões na tela (setVirtualKey)
+     para o objeto `input`, que a bike consome a cada frame. O teclado fica
+     SEMPRE ativo (acessibilidade), com ou sem os botões na tela.
    - Transformar roda do mouse, pinça do trackpad e teclas + / − / 0 em um
      "zoom acumulado" que o loop do jogo entrega à câmera uma vez por frame.
    - Guardar todas as sensibilidades em SETTINGS, num só lugar.
@@ -27,7 +28,8 @@ import { registerGesture } from './invalidGestures.js'
 
    Onde mexer:
    - SETTINGS.zoom.*: velocidade do zoom por roda, pinça do trackpad e teclas.
-   - SETTINGS.drag.*: raio para "pegar" a bike, faixa e velocidade da borda da tela.
+   - SETTINGS.drag.bikeHitRadius: raio (px) para "pegar" a bike com o dedo/mouse.
+   - Velocidade e curva (iguais para teclado e botões): BIKE em src/data/level.js.
    - SETTINGS.tap.*: o que conta como toque, segurar e toque duplo.
    - SETTINGS.longPressMs: tempo parado que vira o gesto inválido "segurar".
    - GAME_KEYS / NEUTRAL_KEYS: quais teclas o jogo usa e quais nunca viram aviso.
@@ -50,9 +52,7 @@ export const SETTINGS = {
     key: 0.16, // por toque nas teclas + e − (escala logarítmica: 0.16 ≈ 17% por toque)
   },
   drag: {
-    bikeHitRadius: 44, // px mínimos ao redor da bike que contam como "pegar a bike" (bom para dedos). Maior = mais fácil pegar
-    edgeMargin: 0.1, // fração da tela perto das bordas que faz a câmera andar ao arrastar a bike (0.1 = 10% de cada lado)
-    edgeSpeed: 28, // metros por segundo da câmera quando a bike é arrastada até a borda
+    bikeHitRadius: 48, // px mínimos ao redor da bike que contam como "pegar a bike" (bom para dedos). Maior = mais fácil pegar
   },
   tap: {
     maxMove: 10, // px: mais que isso já é arraste, não toque
@@ -219,19 +219,44 @@ function onSafariGesture(e) {
 // Não passivo: precisa do preventDefault() para o Safari não dar zoom na página
 for (const type of ['gesturestart', 'gesturechange', 'gestureend']) addEventListener(type, onSafariGesture, { passive: false })
 
+/* ==========================================================================
+   Teclas "virtuais" dos botões na tela (src/ui/controls.js)
+   Cada botão liga/desliga um destes comandos. readInput() junta teclado + botões
+   com OU lógico: segurar ▲ é exatamente igual a segurar W. Por isso a precisão
+   do teclado e dos botões é a mesma (mesmo caminho, mesmos números de BIKE).
+   ========================================================================== */
+/** Comandos pressionados nos botões da tela agora (true = segurando). */
+const virtual = { forward: false, back: false, left: false, right: false, boost: false }
+
 /**
- * Chamado uma vez por frame pelo loop do jogo. Lê o teclado para `input`.
+ * Liga/desliga um comando virtual. Chamada pelos botões de direção a cada toque/soltura.
+ * @param {'forward'|'back'|'left'|'right'|'boost'} name
+ * @param {boolean} down true = pressionado
+ */
+export function setVirtualKey(name, down) {
+  if (name in virtual) virtual[name] = down
+}
+
+/** Solta todos os comandos virtuais (janela perdeu o foco, botões foram ocultados…). */
+export function releaseVirtualKeys() {
+  for (const k in virtual) virtual[k] = false
+}
+addEventListener('blur', releaseVirtualKeys)
+
+/**
+ * Chamado uma vez por frame pelo loop do jogo. Lê teclado + botões da tela para `input`.
  * Com `blocked` (janela aberta, rebobinando…) a bike fica parada.
  * A função auxiliar k(...) devolve true se qualquer uma das teclas está pressionada;
- * true − false vira 1/−1/0 nas subtrações.
+ * true − false vira 1/−1/0 nas subtrações. Teclas diferentes funcionam juntas
+ * (ex.: W + A = frente virando à esquerda; Shift + W = turbo).
  * @param {boolean} blocked - true para zerar o input (bike parada)
  * @returns {typeof input}
  */
 export function readInput(blocked) {
   if (blocked) return Object.assign(input, { forward: 0, turn: 0, boost: false })
   const k = (...codes) => codes.some((c) => keys.has(c))
-  input.forward = k('KeyW', 'ArrowUp') - k('KeyS', 'ArrowDown')
-  input.turn = k('KeyA', 'ArrowLeft') - k('KeyD', 'ArrowRight')
-  input.boost = k('ShiftLeft', 'ShiftRight')
+  input.forward = (k('KeyW', 'ArrowUp') || virtual.forward) - (k('KeyS', 'ArrowDown') || virtual.back)
+  input.turn = (k('KeyA', 'ArrowLeft') || virtual.left) - (k('KeyD', 'ArrowRight') || virtual.right)
+  input.boost = k('ShiftLeft', 'ShiftRight') || virtual.boost
   return input
 }

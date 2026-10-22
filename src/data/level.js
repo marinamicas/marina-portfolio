@@ -10,7 +10,14 @@
    - CHECKPOINTS → pontos de chegada do botão Rebobinar
    - BOUNDS      → limites do mapa
    - DEFAULT_VIEW/ZONES → enquadramentos de câmera
-   - AVATAR_IMAGE → imagem da bike
+   - BIKE        → velocidade, curva e arraste da bike 3D (teclado e botões usam os mesmos valores)
+   - LIVES       → sistema de vidas (quantas, o que tira, o que devolve)
+   - END_SIGNS   → placas de fim de rota com frases poéticas
+   - FOREST      → árvores e flores triangulares
+   - CRITTERS    → borboletas, pássaros, coelhos e onças (as onças tiram vida)
+   - SNOW        → neve de triângulos flutuantes
+   - INTRO       → animação de abertura (triângulo neon + bike saindo da terra)
+   - AUDIO       → música de fundo e créditos
    - PROFILE     → foto de perfil (thumbnail no HUD + foto sutil no céu)
    - PARTICLES   → rastro de partículas que a bike solta ao se mover
    - VISITORS    → contador de visitantes
@@ -61,6 +68,11 @@ export const TEXTS = {
   // ★ Easter egg da bicicleta: aparece na janela "Sobre a Marina" (clique na foto do canto
   //   superior esquerdo) e, uma vez por visita, como aviso logo depois do primeiro arraste da bike.
   bike: 'A escolha da bicicleta não foi por acaso: é o meu veículo predileto e amo andar de bike!',
+  // Janela "Fim das vidas" (quando as vidas chegam a zero)
+  livesOver:
+    'Suas vidas acabaram! Árvores e onças não perdoam ciclistas distraídos. Quer tentar de novo, ver o currículo direto ou falar com a Marina?',
+  // Texto curto do cartão do primeiro recorte (desenhado no próprio cartão, abaixo da foto)
+  introCard: 'Prazer, eu sou a Marina! Arte, tecnologia e dados pedalando juntos.',
 }
 
 /**
@@ -92,7 +104,9 @@ export const GROUPS = {
     image: 'pasta/arquivo.webp', // dentro de src/assets/cutouts/; null ou inexistente = recorte provisório
     body: 'texto…',              // texto da janela e da janela presa no chão
     links: [{ label, url }],     // botões "saiba mais"; [] para nenhum
-    reveal: true,                // (opcional) mostra o texto em 3D no lugar de abrir janela (só a intro usa)
+    card: 'profile',             // (opcional) em vez de imagem, desenha um cartão com a foto de perfil (só a intro usa)
+    opens: 'profile',            // (opcional) ao atropelar abre a janela "Sobre a Marina" em vez da janela padrão
+    reveal: true,                // (opcional, legado) mostra o texto em 3D no lugar de abrir janela (nenhum item usa hoje)
   }
 */
 const item = (id, group, title, subtitle, x, z, extra = {}) => ({
@@ -128,13 +142,15 @@ const cardSize = (imageHeightPx) => [CARD_WIDTH, (CARD_WIDTH * imageHeightPx) / 
  * Ruas: x = -46 (Desenvolvimento), -30 (Design), -14 (Diversidade), 30 (Formações); z de -78 a -165.
  */
 export const ITEMS = [
-  // FASE 1 — apresentação (na rua de entrada, antes da bifurcação)
-  item('intro', 'intro', 'Marina Micas', 'acelere e atropele!', 0, -16, {
-    image: 'intro/marina.webp',
-    size: [3.2, 4.2],
+  // FASE 1 — apresentação (na rua de entrada, antes da bifurcação).
+  // Cartão desenhado pelo jogo com a foto de perfil (mesmo visual dos cartões das Experiências).
+  // Ao ser atropelado abre a janela "Sobre a Marina"; depois a janela fica presa no chão como os outros.
+  item('intro', 'intro', 'Marina Micas Jardim', 'Sobre', 0, -16, {
+    card: 'profile',
+    opens: 'profile',
+    size: cardSize(600),
     body: TEXTS.intro,
-    links: [],
-    reveal: true, // revela o texto em 3D em vez de abrir janela
+    links: [{ label: 'Ver currículo', url: './docs/curriculo-marina-micas.pdf' }],
   }),
 
   // FASE 2 — Experiências › Desenvolvimento (ordem cronológica: o mais antigo aparece primeiro na rua)
@@ -255,8 +271,136 @@ export const ZONES = [
   },
 ]
 
-/** Recorte da bicicleta + avatar, dentro de src/assets/cutouts/ (virado para a direita, rodas na base). */
-export const AVATAR_IMAGE = 'avatar/bike.webp'
+/* ==========================================================================
+   BIKE 3D — direção, velocidade e precisão (src/world/bike.js)
+   ----------------------------------------------------------------------------
+   Teclado e botões na tela escrevem no MESMO objeto `input` (core/input.js), então
+   usam exatamente estes números: a precisão dos dois é idêntica por construção.
+   Ângulos em radianos (π ≈ 3,14 = meia-volta). Velocidades em metros por segundo.
+   ========================================================================== */
+export const BIKE = {
+  maxSpeed: 10, // m/s pedalando normal (▲ / W / seta para cima)
+  boostSpeed: 16, // m/s com turbo (⚡ / Shift)
+  reverseFactor: 0.4, // ré = 40% da velocidade máxima (▼ / S / seta para baixo)
+  accel: 6, // quão rápido chega na velocidade (maior = arranca mais rápido)
+  brake: 9, // quão rápido para ao soltar (maior = freia mais rápido)
+  turnRate: 2.4, // rad/s de curva em movimento (◀ ▶ / A D / setas laterais)
+  pivotFactor: 0.45, // parada, a bike ainda gira no lugar a 45% da curva (ajuste fino de direção)
+  turnSmoothing: 14, // suavidade ao começar/parar de virar (maior = resposta mais seca)
+  // Arrastar a bike com o dedo/mouse (só quando os botões na tela estão ocultos):
+  // a bike pedala na direção do ponto apontado; a câmera a acompanha.
+  drag: {
+    speedPerMeter: 2.2, // velocidade = distância até o dedo × este valor…
+    maxSpeed: 12, // …limitada a este máximo (m/s)
+    deadZone: 0.6, // m: com o dedo a menos disso da bike, ela para
+    turnRate: 9, // rad/s: quão rápido a bike vira para o lado do dedo
+  },
+}
+
+/* ==========================================================================
+   VIDAS
+   ========================================================================== */
+export const LIVES = {
+  start: 6, // vidas ao começar (e máximo que dá para ter)
+  treeDamage: 1, // vidas perdidas ao bater numa árvore
+  jaguarDamage: 1, // vidas perdidas ao encostar numa onça
+  cutoutHeal: 1, // vidas recuperadas ao explodir um recorte (nunca passa de `start`)
+  invulnerableSeconds: 1.6, // depois de perder vida, a bike pisca e fica imune por este tempo
+}
+
+/* ==========================================================================
+   FRASE DO HORIZONTE EM NEON (TEXTS.end, flutuando no fim das ruas, sem fundo)
+   Desenhada em src/world/environment.js (buildHorizon).
+   ========================================================================== */
+export const HORIZON_NEON = {
+  text: '#f4eeff', // miolo das letras (quase branco, como o tubo de neon aceso)
+  glow: '#a66bff', // cor do brilho em volta (roxo neon). Ex.: '#39ff88' verde, '#ff4fd8' rosa
+  pulse: true, // true = o brilho "respira" devagar; false = brilho fixo
+}
+
+/* ==========================================================================
+   PLACAS DE FIM DE ROTA (uma no fim de cada rua)
+   - x, z: posição (metros). As ruas terminam em z = -165.
+   - route: nome da rota (aparece em destaque na placa)
+   - text:  frase poética da placa
+   ========================================================================== */
+export const END_SIGNS = [
+  { route: 'Desenvolvimento', x: -46, z: -160, text: 'Aqui termina o código, mas não a curiosidade: cada linha escrita é ponte para a próxima pergunta.' },
+  { route: 'Design', x: -30, z: -160, text: 'Toda forma bonita nasceu de alguém que parou para escutar. Fim da rota, começo do olhar.' },
+  { route: 'Diversidade', x: -14, z: -160, text: 'Como a tulipa, única em cada caule: caminhos diferentes florescem melhor juntos.' },
+  { route: 'Formações', x: 30, z: -160, text: 'O estudo não tem linha de chegada: cada diploma é só uma página virada no caderno da vida.' },
+]
+
+/* ==========================================================================
+   FLORESTA TRIANGULAR (src/world/forest.js)
+   As árvores TÊM colisão: a bike para nelas e perde vida (LIVES.treeDamage).
+   ========================================================================== */
+export const FOREST = {
+  trees: 230, // quantidade de árvores (menos = mais leve no celular)
+  flowers: 420, // quantidade de flores (só enfeite, sem colisão)
+  roadClearance: 5.6, // m: distância mínima do centro da rua até uma árvore (a rua tem ROAD_WIDTH = 7 de largura)
+  area: { minX: -105, maxX: 95, minZ: -190, maxZ: 26 }, // retângulo onde a floresta é plantada
+  treeHeight: [3.2, 7.5], // altura das árvores em metros [mín, máx]
+  hitRadius: 0.75, // m: raio do tronco para contar a batida
+  canopyColors: ['#2f6b4f', '#3f8a5f', '#235443', '#5b9e6a', '#6b2fd6', '#8f5cf7'], // copas: verdes + toques do roxo da marca
+  trunkColor: '#4a3426',
+  flowerColors: ['#c9b6ff', '#f5f2ea', '#ff7eb6', '#ffd166', '#8f5cf7'],
+}
+
+/* ==========================================================================
+   BICHOS TRIANGULARES (src/world/critters.js)
+   - butterflies, birds, rabbits: quantidade (só enfeite)
+   - jaguars: cada onça anda de um ponto `from` [x, z] a um ponto `to` e volta, a `speed` m/s.
+     Encostar numa onça tira LIVES.jaguarDamage. Elas cruzam as ruas depois da bifurcação.
+   ========================================================================== */
+export const CRITTERS = {
+  butterflies: 26,
+  birds: 12,
+  rabbits: 10,
+  jaguarHitRadius: 1.3, // m
+  jaguars: [
+    { from: [-55, -114], to: [-37, -114], speed: 3.2 }, // cruza a rua Desenvolvimento
+    { from: [-39, -142], to: [-21, -142], speed: 3.6 }, // cruza a rua Design
+    { from: [-23, -114], to: [-5, -114], speed: 3 }, // cruza a rua Diversidade
+    { from: [21, -120], to: [39, -120], speed: 3.4 }, // cruza a rua Formações
+  ],
+}
+
+/* ==========================================================================
+   NEVE (src/world/snow.js): os triângulos que flutuavam viraram flocos caindo.
+   Ficam numa "caixa" em volta da câmera, então sempre há neve na tela.
+   ========================================================================== */
+export const SNOW = {
+  count: 280, // quantidade de flocos
+  opacity: 0.28, // transparência (baixa para não atrapalhar a visão)
+  size: [0.12, 0.32], // tamanho dos flocos em metros [mín, máx]
+  fallSpeed: [0.6, 1.6], // m/s de queda [mín, máx]
+  box: { x: 70, y: 26, z: 70 }, // tamanho da caixa de neve em volta da câmera (metros)
+}
+
+/* ==========================================================================
+   ABERTURA (src/world/intro.js): triângulo neon desenhado no chão e a bike
+   saindo da terra de dentro dele. Depois aparece a janela de instruções.
+   ========================================================================== */
+export const INTRO = {
+  triangleRadius: 2.8, // m: distância do centro até cada ponta do triângulo
+  drawSeconds: 1.5, // tempo para desenhar os 3 lados
+  riseSeconds: 1.2, // tempo da bike subindo da terra
+  neonColor: '#c9b6ff', // cor do neon (lilás)
+  glowColor: '#8f5cf7', // cor do brilho em volta
+}
+
+/* ==========================================================================
+   ÁUDIO (src/ui/audio.js)
+   O arquivo fica em public/ (copiado para a raiz do site publicado).
+   Navegadores bloqueiam som automático até o primeiro toque/clique: nesse caso a
+   música começa no primeiro gesto do visitante (por exemplo, o botão "Começar").
+   ========================================================================== */
+export const AUDIO = {
+  file: 'som.mp3', // arquivo dentro de public/
+  volume: 0.45, // 0 a 1
+  credit: 'Daniel Micas Jardim da Silva', // autor da música (aparece no botão de som)
+}
 
 /* ==========================================================================
    Foto de perfil: thumbnail no HUD + foto sutil no "céu"
@@ -318,9 +462,11 @@ export const PARTICLES = {
   - since:     data de início exibida ("desde DD/MM/AAAA"), no formato AAAA-MM-DD
   - namespace: nome único deste site no serviço (troque se quiser zerar a contagem)
   - keys:      nomes dos dois contadores dentro do namespace
+  Para ZERAR: troque o namespace por um nome novo (ex.: com a data) e ajuste `since`.
+  A marca "este aparelho já foi contado" também é por namespace, então todo mundo volta a contar como único.
 */
 export const VISITORS = {
-  since: '2026-10-21', // data do deploy do contador
-  namespace: 'marinamicas-portfolio',
+  since: '2026-10-22', // contagem zerada em 22/10/2026
+  namespace: 'marinamicas-portfolio-2026-10-22',
   keys: { unique: 'visitantes-unicos', views: 'visualizacoes' },
 }
