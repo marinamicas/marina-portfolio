@@ -270,7 +270,7 @@ Tudo fica no `<head>` do [`index.html`](index.html), em blocos comentados:
 
 Os textos longos ficam em `TEXTS` (`src/data/level.js`): apresentação (`intro`), frase do horizonte (`end`), "Você zerou!" (`win`), Game Over, confirmação do reset, pergunta de recomeço e o **easter egg da bike** (`bike`):
 
-> "A escolha da bicicleta não foi por acaso: é o meu veículo predileto e amo andar de bike!"
+> "A escolha da bicicleta não foi por acaso: amo andar de bike!"
 
 Ele aparece em dois lugares: na janela **"Sobre a Marina"** (clique na miniatura da foto) e, uma vez por visita, como aviso 1,5 s depois do primeiro arraste da bike (lógica em `maybeTellBikeStory()`, `src/main.js`). Os textos dos botões e títulos das janelas ficam em `src/ui/screens.js` e `src/ui/profile.js`; os do guia de navegação em `src/ui/guide.js`.
 

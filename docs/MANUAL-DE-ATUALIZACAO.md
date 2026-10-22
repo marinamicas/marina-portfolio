@@ -1036,7 +1036,7 @@ Resumo:
 
 ### 5.21 Easter egg da bicicleta
 
-A frase "A escolha da bicicleta não foi por acaso: é o meu veículo predileto e amo andar de bike!" fica em
+A frase "A escolha da bicicleta não foi por acaso: amo andar de bike!" fica em
 `TEXTS.bike` (`src/data/level.js`) e aparece:
 
 - na janela **"Sobre a Marina"** (miniatura da foto e primeiro recorte), em destaque lilás;

@@ -51,14 +51,14 @@ export const PALETTE = {
 export const TEXTS = {
   // Apresentação: aparece em 3D quando o recorte da Marina é atropelado (e na janela "Sobre")
   intro:
-    'Sou uma profissional extrovertida, criativa e comunicativa, habilidades que têm sido fundamentais em minha trajetória de aproximadamente 6 anos como UX/UI Designer. Com uma formação sólida na área de informática, estou atualmente em busca de novos desafios no universo de dados — abrangendo engenharia, ciência e análise — com o objetivo de criar experiências ainda mais impactantes e otimizadas nos produtos em que atuo, unindo arte com tecnologia.',
+    'Sou uma profissional extrovertida, criativa e comunicativa, habilidades que têm sido fundamentais em minha trajetória de aproximadamente 6 anos como UX/UI Designer. Com uma formação sólida na área de informática, estou atualmente em busca de novos desafios no universo de dados abrangendo engenharia, ciência e análise com o objetivo de criar experiências ainda mais impactantes e otimizadas nos produtos em que atuo, unindo arte com tecnologia.',
   // Frase do horizonte, no fim das ruas
   end: 'O fim é só um começo de infinitas possibilidades onde o desafio é o combustível necessário. Poetizado por Marina Micas Jardim em 28/07/2026.',
   // Janela "Você zerou!"
-  win: 'Gostou de conhecer a experiência profissional da Marina Micas? Entre em contato pelos canais abaixo para conversarem e compartilharem conhecimentos:',
+  win: 'Gostou de conhecer minhas experiências profissionais? Entre em contato comigo pelos canais abaixo:',
   // Janela "Game Over!" (ao tentar fechar a aba sem 100% do inventário)
   gameOver:
-    'Você não percorreu todo o caminho, mas não precisa sair de mãos vazias! Deseja tentar novamente para ver o restante da trajetória ou prefere ir direto aos contatos da Marina?',
+    'Você não percorreu todo o caminho, mas não precisa sair de mãos vazias! Deseja tentar novamente para ver o restante da trajetória ou prefere ir direto aos meus contatos?',
   // Confirmação do botão ↺ Resetar
   resetConfirm:
     'Isso apaga todos os recortes conquistados no inventário e recomeça a partida do zero, com todos os recortes de pé de novo. Essa ação não pode ser desfeita.',
@@ -67,10 +67,10 @@ export const TEXTS = {
     'Você pode apagar tudo o que conquistou e recomeçar do zero, ou manter o inventário (e os recortes já destruídos) e apenas voltar ao ponto de partida.',
   // ★ Easter egg da bicicleta: aparece na janela "Sobre a Marina" (clique na foto do canto
   //   superior esquerdo) e, uma vez por visita, como aviso logo depois do primeiro arraste da bike.
-  bike: 'A escolha da bicicleta não foi por acaso: é o meu veículo predileto e amo andar de bike!',
+  bike: 'A escolha da bicicleta não foi por acaso: amo andar de bike!',
   // Janela "Fim das vidas" (quando as vidas chegam a zero)
   livesOver:
-    'Suas vidas acabaram! Árvores e onças não perdoam ciclistas distraídos. Quer tentar de novo, ver o currículo direto ou falar com a Marina?',
+    'Suas vidas acabaram! Árvores e onças não perdoam ciclistas distraídos. Quer tentar de novo, ver o currículo direto ou falar comigo?',
   // Texto curto do cartão do primeiro recorte (desenhado no próprio cartão, abaixo da foto)
   introCard: 'Prazer, eu sou a Marina! Arte, tecnologia e dados pedalando juntos.',
 }

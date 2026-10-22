@@ -214,7 +214,7 @@ export function showProfile({ onClose = null } = {}) {
          <p class="tag">Sobre</p>
          <h2>${escapeHTML(PROFILE.name)}</h2>
          <p>${escapeHTML(TEXTS.intro)}</p>
-         <blockquote class="bike-note"><span aria-hidden="true">🚲</span> ${escapeHTML(TEXTS.bike)}</blockquote>
+         <blockquote class="bike-note">${escapeHTML(TEXTS.bike)}</blockquote>
          ${note}
          ${contactsHTML()}
        </div>
