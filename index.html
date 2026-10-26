@@ -215,23 +215,23 @@
   <div class="hud-actions">
     <div class="rewind">
       <!-- Abre o menu: rebobinar para a bifurcação, para o início ou resetar tudo -->
-      <button id="btn-rewind" aria-haspopup="true" aria-expanded="false"><span aria-hidden="true">⟲</span> <span class="label">Rebobinar</span></button>
+      <button id="btn-rewind" aria-haspopup="true" aria-expanded="false"><img src="/src/assets/ui/icons/rebobinar.png" alt="Rebobinar" style="vertical-align: middle;"> <span class="label">Rebobinar</span></button>
       <div class="rewind-menu" role="menu">
-        <button id="btn-rewind-fork" role="menuitem">⟲ Para a bifurcação</button>
-        <button id="btn-rewind-start" role="menuitem">⟲⟲ Para o início</button>
+        <button id="btn-rewind-fork" role="menuitem"><img src="/src/assets/ui/icons/rebobinar.png" alt="Rebobinar" style="vertical-align: middle;"> Para a bifurcação</button>
+        <button id="btn-rewind-start" role="menuitem"><img src="/src/assets/ui/icons/rebobinar_inicio.png" alt="Rebobinar para o início" style="vertical-align: middle;"> Para o início</button>
         <!-- Resetar mora aqui dentro: apaga o inventário (pede confirmação antes) -->
-        <button id="btn-reset" role="menuitem" class="danger">↺ Resetar tudo</button>
+        <button id="btn-reset" role="menuitem" class="danger"><img src="/src/assets/ui/icons/resetar.png" alt="Resetar" style="vertical-align: middle;"> Resetar tudo</button>
       </div>
     </div>
     <!-- #inventory-count mostra "conquistados/total" -->
-    <button id="btn-inventory"><span aria-hidden="true">✂</span> <span class="label">Inventário</span> <span id="inventory-count">0/0</span></button>
-    <button id="btn-help" aria-label="Como jogar"><span aria-hidden="true">?</span> <span class="label">Ajuda</span></button>
+    <button id="btn-inventory"><img src="/src/assets/ui/icons/experiencias.png" alt="Inventário" style="vertical-align: middle;"> <span class="label">Inventário</span> <span id="inventory-count">0/0</span></button>
+    <button id="btn-help" aria-label="Como jogar"><img src="/src/assets/ui/icons/ajuda.png" alt="Ajuda" style="vertical-align: middle;"> <span class="label">Ajuda</span></button>
     <!-- Mostra/oculta os botões de direção na tela. Ocultos = arrastar a bike com o dedo/mouse -->
-    <button id="btn-controls" aria-pressed="true"><span aria-hidden="true">🎮</span> <span class="label">Botões</span></button>
+    <button id="btn-controls" aria-pressed="true"><img src="/src/assets/ui/icons/botoes_navegacao_jogo.png" alt="Botões de navegação" style="vertical-align: middle;"> <span class="label">Botões</span></button>
     <!-- Liga/desliga a música e mostra os créditos do autor (src/ui/audio.js) -->
     <button id="btn-sound" class="sound" aria-pressed="false" title="Música de Daniel Micas Jardim da Silva">
-      <span class="sound-icon" aria-hidden="true">🔇</span>
-      <span class="sound-text"><strong>Som</strong><small>♪ Daniel Micas Jardim da Silva</small></span>
+      <img src="/src/assets/ui/icons/som.png" alt="Som ligado" style="vertical-align: middle;" class="sound-icon">
+      <span class="sound-text"><strong>Som</strong><small> Daniel Micas Jardim da Silva</small></span>
     </button>
   </div>
 
@@ -245,14 +245,14 @@
   -->
   <div class="touch-controls" aria-label="Controles da bike">
     <div class="pad pad-left">
-      <button type="button" data-key="left" aria-label="Virar à esquerda">◀</button>
-      <button type="button" data-key="right" aria-label="Virar à direita">▶</button>
+      <button type="button" data-key="left" aria-label="Virar à esquerda"><img src="/src/assets/ui/icons/esquerda.png" alt="Botão para à esquerda" style="vertical-align: middle;"></button>
+      <button type="button" data-key="right" aria-label="Virar à direita"><img src="/src/assets/ui/icons/direita.png" alt="Botão para à direita" style="vertical-align: middle;"></button>
     </div>
     <div class="pad pad-right">
-      <button type="button" data-key="boost" class="small" aria-label="Turbo">⚡</button>
+      <button type="button" data-key="boost" class="small" aria-label="Turbo"><img src="/src/assets/ui/icons/turbo.png" alt="Modo turbo" style="vertical-align: middle;"></button>
       <div class="pad-col">
-        <button type="button" data-key="forward" aria-label="Acelerar">▲</button>
-        <button type="button" data-key="back" aria-label="Ré e freio">▼</button>
+        <button type="button" data-key="forward" aria-label="Acelerar"><img src="/src/assets/ui/icons/acima.png" alt="Botão para coma" style="vertical-align: middle;"></button>
+        <button type="button" data-key="back" aria-label="Ré e freio"><img src="/src/assets/ui/icons/abaixo.png" alt="Botão para baixo" style="vertical-align: middle;"></button>
       </div>
     </div>
   </div>

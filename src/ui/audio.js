@@ -49,8 +49,19 @@ let wanted = (() => {
 /** Atualiza ícone, texto e estado acessível do botão conforme o som está tocando ou não. */
 function render() {
   const playing = !audio.paused
-  if (icon) icon.textContent = playing ? '🔊' : '🔇'
+  
+  // Atualiza o caminho da imagem e o texto alt
+  if (icon) {
+    icon.src = playing 
+      ? '/src/assets/ui/icons/som.png' 
+      : '/src/assets/ui/icons/som_desligado.png';
+    icon.alt = playing ? 'Som ligado' : 'Som desligado';
+  }
+
+  // Atualiza o texto do botão
   if (label) label.textContent = playing ? 'Som ligado' : wanted ? 'Toque para ouvir' : 'Som desligado'
+  
+  // Atributos de acessibilidade
   button?.setAttribute('aria-pressed', String(playing))
   button?.setAttribute('aria-label', `${playing ? 'Desligar' : 'Ligar'} música de ${AUDIO.credit}`)
 }
