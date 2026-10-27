@@ -150,7 +150,7 @@ export const ITEMS = [
     opens: 'profile',
     size: cardSize(600),
     body: TEXTS.intro,
-    links: [{ label: 'Ver currículo', url: './docs/curriculo-marina-micas.pdf' }],
+    links: [{ label: 'Ver currículo', url: './curriculo-marina-micas.pdf' }],
   }),
 
   // FASE 2 — Experiências › Desenvolvimento (ordem cronológica: o mais antigo aparece primeiro na rua)

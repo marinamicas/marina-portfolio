@@ -23,7 +23,7 @@
     canonical, og:url, twitter e no JSON-LD (procure por SITE_URL nos comentários).
   - Favicon → troque public/favicon.svg e public/apple-touch-icon.png (ver README).
   - Imagem de prévia ao compartilhar → public/og-image.jpg (1200×630, até ~300 KB).
-  - Arquivos de public/ ficam na RAIZ do site: public/docs/x.pdf vira ./docs/x.pdf (nunca use "/public/" em links).
+  - Arquivos de public/ ficam na RAIZ do site: public/x.pdf vira ./x.pdf (nunca use "/public/" em links).
   ============================================================================
 -->
 <html lang="pt-BR">
@@ -188,11 +188,8 @@
       <a href="https://wa.me/5521985487666" aria-label="WhatsApp" target="_blank" rel="noopener" data-viewer-skip>
         <img src="./src/assets/ui/icons/whatsapp.png" alt="" /><span>WhatsApp</span>
       </a>
-      <!-- Currículo: o PDF PRECISA estar em public/docs/curriculo-marina-micas.pdf.
-           Só a pasta public/ vai para o site publicado; um PDF na pasta docs/ da raiz funciona no
-           npm run dev, mas dá erro 404 no GitHub Pages.
-           Abre direto no leitor de PDF do navegador/celular, em nova aba. -->
-      <a href="./docs/curriculo-marina-micas.pdf" aria-label="Currículo em PDF" target="_blank" rel="noopener" data-viewer-skip>
+      <!-- Currículo em PDF. Só a pasta public/ vai para o site publicado. Abre em nova aba. -->
+      <a href="./curriculo-marina-micas.pdf" aria-label="Currículo em PDF" target="_blank" rel="noopener" data-viewer-skip>
         <img src="./src/assets/ui/icons/curriculo.png" alt="" /><span>Currículo (PDF)</span>
       </a>
     </nav>

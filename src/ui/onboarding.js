@@ -22,8 +22,8 @@ import iconCurriculo from '../assets/ui/icons/curriculo.png'
    - Texto/endereço do botão do currículo → CV_URL e o HTML abaixo.
    ========================================================================== */
 
-/** Endereço do currículo (arquivo em public/docs/; no site publicado fica na raiz). */
-const CV_URL = './docs/curriculo-marina-micas.pdf'
+/** Endereço do currículo (o arquivo publicado fica na raiz do site). */
+const CV_URL = './curriculo-marina-micas.pdf'
 
 /**
  * Abre a janela inicial.

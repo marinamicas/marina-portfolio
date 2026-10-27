@@ -165,7 +165,7 @@ export function showLivesOver() {
      <p>${TEXTS.livesOver}</p>
      <div class="actions">
        <button class="btn" data-action="retry">Tentar novamente</button>
-       <a class="btn" href="./docs/curriculo-marina-micas.pdf" target="_blank" rel="noopener" data-viewer-skip>Ver currículo</a>
+       <a class="btn" href="./curriculo-marina-micas.pdf" target="_blank" rel="noopener" data-viewer-skip>Ver currículo</a>
        <button class="btn ghost" data-action="contacts">Ir aos contatos</button>
      </div>`,
     // Fechou sem escolher (×, Esc, clique fora): recomeça do início mantendo o inventário, com vidas cheias
