@@ -1,5 +1,6 @@
 import { ui } from './modal.js'
 import { buildInstructions, instructionsHTML } from './guide.js'
+import iconCurriculo from '../assets/ui/icons/curriculo.png'
 
 /* ==========================================================================
    JANELA INICIAL DE INSTRUÇÕES (onboarding)
@@ -40,7 +41,7 @@ export function showOnboarding(onStart) {
     `<p class="tag">Como jogar</p>
      <h2>${guide.title}</h2>
      <a class="btn cv-cta" style=" width: fit-content; box-shadow: none;" href="${CV_URL}" target="_blank" rel="noopener" data-viewer-skip>
-       <span aria-hidden="true"><img src="/src/assets/ui/icons/curriculo.png" alt="Currículo"></span>
+       <span aria-hidden="true"><img src="${iconCurriculo}" alt="Currículo"></span>
        <span>Ver o currículo agora<small>Para conhecer as experiências sem jogar</small></span>
      </a>
      ${instructionsHTML(guide.items)}

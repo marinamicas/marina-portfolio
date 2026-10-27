@@ -2,6 +2,7 @@ import { isTouchDevice } from '../core/device.js'
 import { escapeHTML } from '../utils/helpers.js'
 import { toast } from './effects.js'
 import { ui } from './modal.js'
+import iconCurriculo from '../assets/ui/icons/curriculo.png'
 
 /* ==========================================================================
    VISUALIZADOR EM TELA CHEIA (links externos e "Saiba mais")
@@ -179,7 +180,7 @@ function render(url) {
     // - download: o botão "Baixar" salva o arquivo no aparelho.
     const file = url.pathname.split('/').pop()
     return card(
-      '<img src="/src/assets/ui/icons/curriculo.png" alt="Currículo">',
+      `<img src="${iconCurriculo}" alt="Currículo">`,
       'Documento em PDF', // genérico: vale para qualquer PDF (o nome do link já aparece na barra do topo)
       'Abra o PDF no leitor do seu celular (em outra aba, o jogo continua aqui) ou baixe o arquivo.',
       `<a class="btn" href="${escapeHTML(url.href)}" target="_blank" rel="noopener" data-viewer-skip>Abrir PDF</a>
