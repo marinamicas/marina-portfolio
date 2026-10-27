@@ -1,6 +1,10 @@
 import { AUDIO } from '../data/level.js'
 import { toast } from './effects.js'
 
+// Importando as imagens para que o Vite as processe corretamente no build
+import iconSomLigado from '../assets/ui/icons/som_ligado.png'
+import iconSomDesligado from '../assets/ui/icons/som_desligado.png'
+
 /* ==========================================================================
    MÚSICA DE FUNDO + CRÉDITOS
 
@@ -50,11 +54,9 @@ let wanted = (() => {
 function render() {
   const playing = !audio.paused
   
-  // Atualiza o caminho da imagem e o texto alt
+  // Atualiza o caminho da imagem usando as variáveis importadas no topo
   if (icon) {
-    icon.src = playing 
-      ? '/src/assets/ui/icons/som.png' 
-      : '/src/assets/ui/icons/som_desligado.png';
+    icon.src = playing ? iconSomLigado : iconSomDesligado;
     icon.alt = playing ? 'Som ligado' : 'Som desligado';
   }
 
