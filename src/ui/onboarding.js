@@ -22,8 +22,8 @@ import iconCurriculo from '../assets/ui/icons/curriculo.png'
    - Texto/endereço do botão do currículo → CV_URL e o HTML abaixo.
    ========================================================================== */
 
-/** Endereço do currículo (o arquivo publicado fica na raiz do site). */
-const CV_URL = './curriculo-marina-micas.pdf'
+/** Endereço do currículo (o arquivo publicado fica dentro da pasta docs). */
+const CV_URL = './docs/curriculo-marina-micas.pdf'
 
 /**
  * Abre a janela inicial.
@@ -39,12 +39,12 @@ export function showOnboarding(onStart) {
   }
   ui.open(
     `<p class="tag">Como jogar</p>
-     <h2>${guide.title}</h2>
-     <a class="btn cv-cta" style=" width: fit-content; box-shadow: none;" href="${CV_URL}" target="_blank" rel="noopener" data-viewer-skip>
-       <span aria-hidden="true"><img src="${iconCurriculo}" alt="Currículo"></span>
+     <h2>\${guide.title}</h2>
+     <a class="btn cv-cta" style=" width: fit-content; box-shadow: none;" href="\${CV_URL}" target="_blank" rel="noopener" data-viewer-skip>
+       <span aria-hidden="true"><img src="\${iconCurriculo}" alt="Currículo"></span>
        <span>Ver o currículo agora<small>Para conhecer as experiências sem jogar</small></span>
      </a>
-     ${instructionsHTML(guide.items)}
+     \${instructionsHTML(guide.items)}
      <div class="actions">
        <button class="btn start-btn" data-onboarding="start">Começar a pedalar ▶</button>
      </div>`,
