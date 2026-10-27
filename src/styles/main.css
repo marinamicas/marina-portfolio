@@ -359,7 +359,6 @@ body.is-rewinding::after { content: '◀◀ REBOBINANDO'; position: fixed; top: 
   .guide-card h2 { font-size: 21px; margin-bottom: 8px; }
   .guide-card .guide-reason { font-size: 14px; padding: 6px 10px; margin-bottom: 12px; }
   .guide { gap: 8px; margin-bottom: 8px; }
-  .guide-icon { flex-basis: 32px; height: 32px; font-size: 17px; }
   .guide strong { font-size: 14px; }
   .guide p { font-size: 13px; line-height: 1.3; }
   .guide-card .actions { bottom: -20px; margin: 0 -20px -20px; padding: 10px 20px 16px; }

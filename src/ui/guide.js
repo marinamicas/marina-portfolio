@@ -81,23 +81,33 @@ export function buildInstructions(device = isTouchDevice() ? 'touch' : 'desktop'
   const items = []
   if (buttons) {
     items.push(
-      ['🧭', 'Virar: ◀ ▶', 'Use os botões do canto esquerdo para apontar a bike. A seta neon no chão mostra a direção.'],
-      ['🚴', 'Pedalar e frear: ▲ ▼', 'Segure ▲ para ir em frente e ▼ para frear ou dar ré. ⚡ é o turbo.'],
+      ['<img src="/src/assets/ui/icons/esquerda.png" alt="Botão para à esquerda" style="vertical-align: middle;">', 'Virar para esquerda', 'Use o botão do canto esquerdo com a imagem "◀" para apontar a bike para esquerda. A seta neon no chão mostra a direção.'], 
+      
+      ['<img src="/src/assets/ui/icons/direita.png" alt="Botão para à direita" style="vertical-align: middle;">', 'Virar para direita', 'Use o botão do canto esquerdo com a imagem "▶" para apontar a bike para direita. A seta neon no chão mostra a direção.'], 
+      
+      ['<img src="/src/assets/ui/icons/acima.png" alt="Botão para cima" style="vertical-align: middle;"', 'Ir para frente', 'Use o botão do canto direito com a imagem "▲" para a bike ir para frente. A seta neon no chão mostra a direção.'], 
+      
+      ['<img src="/src/assets/ui/icons/abaixo.png" alt="Botão para baixo" style="vertical-align: middle;"', 'Ir para trás', 'Use o botão do canto direito com a imagem "▼" para a bike ir para trás. A seta neon no chão mostra a direção.'],
+      
+      ['<img src="/src/assets/ui/icons/turbo.png" alt="Modo turbo" style="vertical-align: middle;position: relative;left: -3px;">', 'Turbo', 'Segure o botão com a imagem "⚡" para acelerar a bike.']
     )
-    if (touch) items.push(['✌️', 'Dois dedos juntos', 'Dá para virar e acelerar ao mesmo tempo, um dedo em cada lado.'])
+    if (touch) items.push(['<img src="/src/assets/ui/icons/dois_dedos_juntos.png" alt="Botão dois dedos juntos" style="vertical-align: middle;">', 'Dois dedos juntos', 'Dá para virar e acelerar ao mesmo tempo, um dedo em cada lado.'])
   } else {
     items.push([
-      '🚲',
+      '<img src="/src/assets/ui/icons/bike.png" alt="Bicicleta" style="vertical-align: middle;">',
       touch ? 'Toque na bike e arraste' : 'Clique na bike e arraste',
       `A bike pedala até onde ${touch ? 'seu dedo' : 'o mouse'} apontar. Mantenha ${touch ? 'o dedo' : 'o mouse'} à frente dela para seguir; solte para parar.`,
     ])
   }
-  if (!touch) items.push(['⌨️', 'Teclado (sempre ativo)', 'W A S D ou setas pedalam e viram, Shift é o turbo. As teclas funcionam juntas.'])
+  if (!touch) items.push(['<img src="/src/assets/ui/icons/teclado.png" alt="Teclado" style="vertical-align: middle;">', 'Teclado (sempre ativo)', 'W A S D ou setas pedalam e viram, Shift é o turbo. As teclas funcionam juntas.'])
   items.push(
-    [touch ? '🤏' : '🔍', 'Zoom', touch ? 'Pinça com dois dedos aproxima e afasta. Toque duplo volta ao normal.' : 'Roda do mouse, pinça no trackpad ou + e −. Duplo clique ou 0 volta ao normal.'],
-    ['💥', 'Atropele os recortes', 'Cada recorte abre uma parte da história e devolve 1 vida.'],
-    ['🌲', 'Cuidado!', `Você tem ${LIVES.start} vidas. Bater em árvores ou encostar nas onças tira 1 vida.`],
-    ['🎮', buttons ? 'Prefere arrastar a bike?' : 'Prefere botões?', buttons ? 'Oculte os botões no 🎮 do topo para mover a bike arrastando.' : 'Ligue os botões de direção no 🎮 do topo.'],
+    [touch ? '🤏' : '<img src="/src/assets/ui/icons/zoom_computador.png" alt="Zoom com computador" style="vertical-align: middle;">', 'Zoom', touch ? 'Pinça com dois dedos aproxima e afasta. Toque duplo volta ao normal.' : 'Roda do mouse, pinça no trackpad ou + e −. Duplo clique ou 0 volta ao normal.'],
+
+    ['<img src="/src/assets/ui/icons/atropelar_experiencias.png" alt="Atropelar experiências" style="vertical-align: middle;">', 'Atropele os recortes', 'Cada recorte abre uma parte da história e devolve 1 vida.'],
+
+    ['<img src="/src/assets/ui/icons/arvore.png" alt="Árvore" style="vertical-align: middle;">', 'Cuidado!', `Você tem ${LIVES.start} vidas. Bater em árvores ou encostar nas onças tira 1 vida.`],
+
+    ['<img src="/src/assets/ui/icons/botoes_navegacao_jogo.png" alt="Botões de navegação" style="vertical-align: middle;">', buttons ? 'Prefere arrastar a bike?' : 'Prefere botões?', buttons ? 'Oculte os botões no 🎮 do topo para mover a bike arrastando.' : 'Ligue os botões de direção no 🎮 do topo.'],
   )
   return { title: touch ? 'Como jogar no celular' : 'Como jogar no computador', items }
 }
@@ -109,7 +119,7 @@ export function buildInstructions(device = isTouchDevice() ? 'touch' : 'desktop'
  */
 export const instructionsHTML = (items) =>
   `<ul class="guide">${items
-    .map(([icon, action, text]) => `<li><span class="guide-icon" aria-hidden="true">${icon}</span><div><strong>${action}</strong><p>${text}</p></div></li>`)
+    .map(([icon, action, text]) => `<li><span aria-hidden="true">${icon}</span><div><strong>${action}</strong><p>${text}</p></div></li>`)
     .join('')}</ul>`
 
 /**

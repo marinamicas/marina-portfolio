@@ -39,8 +39,8 @@ export function showOnboarding(onStart) {
   ui.open(
     `<p class="tag">Como jogar</p>
      <h2>${guide.title}</h2>
-     <a class="btn cv-cta" href="${CV_URL}" target="_blank" rel="noopener" data-viewer-skip>
-       <span aria-hidden="true">📄</span>
+     <a class="btn cv-cta" style=" width: fit-content; box-shadow: none;" href="${CV_URL}" target="_blank" rel="noopener" data-viewer-skip>
+       <span aria-hidden="true"><img src="/src/assets/ui/icons/curriculo.png" alt="Currículo"></span>
        <span>Ver o currículo agora<small>Para conhecer as experiências sem jogar</small></span>
      </a>
      ${instructionsHTML(guide.items)}
