@@ -398,8 +398,8 @@ export const INTRO = {
    ========================================================================== */
 export const AUDIO = {
   file: 'som.mp3', // arquivo dentro de public/
-  volume: 0.45, // 0 a 1
-  credit: 'Daniel Micas Jardim da Silva', // autor da música (aparece no botão de som)
+  volume: 0.30, // 0 a 1
+  credit: 'Murasaki - música instrumental de Daniel Micas Jardim da Silva', // autor da música (aparece no botão de som)
 }
 
 /* ==========================================================================
