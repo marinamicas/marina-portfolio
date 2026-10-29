@@ -14,6 +14,7 @@ import iconDoisDedos from '../assets/ui/icons/dois_dedos_juntos.png'
 import iconBike from '../assets/ui/icons/bike.png'
 import iconTeclado from '../assets/ui/icons/teclado.png'
 import iconZoomComp from '../assets/ui/icons/zoom_computador.png'
+import iconZoomCel from '../assets/ui/icons/zoom_celular.png'
 import iconAtropelar from '../assets/ui/icons/atropelar_experiencias.png'
 import iconArvore from '../assets/ui/icons/arvore.png'
 import iconBotoesNav from '../assets/ui/icons/botoes_navegacao_jogo.png'
@@ -114,7 +115,7 @@ export function buildInstructions(device = isTouchDevice() ? 'touch' : 'desktop'
   }
   if (!touch) items.push([`<img src="${iconTeclado}" alt="Teclado" style="vertical-align: middle;">`, 'Teclado (sempre ativo)', 'W A S D ou setas pedalam e viram, Shift é o turbo. As teclas funcionam juntas.'])
   items.push(
-    [touch ? '🤏' : `<img src="${iconZoomComp}" alt="Zoom com computador" style="vertical-align: middle;">`, 'Zoom', touch ? 'Pinça com dois dedos aproxima e afasta. Toque duplo volta ao normal.' : 'Roda do mouse, pinça no trackpad ou + e −. Duplo clique ou 0 volta ao normal.'],
+    [touch ? `<img src="${iconZoomCel}" alt="Zoom com celular" style="vertical-align: middle;">` : `<img src="${iconZoomComp}" alt="Zoom com computador" style="vertical-align: middle;">`, 'Zoom', touch ? 'Pinça com dois dedos aproxima e afasta. Toque duplo volta ao normal.' : 'Roda do mouse, pinça no trackpad ou + e −. Duplo clique ou 0 volta ao normal.'],
 
     [`<img src="${iconAtropelar}" alt="Atropelar experiências" style="vertical-align: middle;">`, 'Atropele os recortes', 'Cada recorte abre uma parte da história e devolve 1 vida.'],
 
